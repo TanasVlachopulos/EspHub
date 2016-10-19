@@ -1,3 +1,7 @@
+"""
+============= DATABASE ACCESS OBJECTS ===============
+    -   maps database entities to object representation
+"""
 import time
 
 

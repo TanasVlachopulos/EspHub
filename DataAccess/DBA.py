@@ -1,3 +1,9 @@
+"""
+========= DATABASE ACCESS ===========
+    - handle database connection
+    - provides methods for access to database like Insert and Select which returns Database objects
+"""
+
 import sqlite3 as sql
 import DataAccess.DAO as DAO
 import sys
