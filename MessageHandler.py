@@ -16,10 +16,16 @@ class MessageHandler(threading.Thread):
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
 
-        self.client.connect(self.broker_address, port=self.broker_port, keepalive=self.keepalive)
+        try:
+            self.client.connect(self.broker_address, port=self.broker_port, keepalive=self.keepalive)
+        except TimeoutError:
+            print("Connection timeout. Remote MQTT broker is currently unavailable. Check whether the broker is running.")
+            exit(0)
+
         self.client.loop_forever()
 
-    def on_connect(self, client, userdata, rc):
+    @staticmethod
+    def on_connect(client, userdata, rc):
         if rc == 0:
             print("Successfully connected to broker")
         else:
@@ -27,7 +33,8 @@ class MessageHandler(threading.Thread):
 
         client.subscribe("test/#")
 
-    def on_message(self, client, userdata, msg):
+    @staticmethod
+    def on_message(client, userdata, msg):
         print("Topic: " + msg.topic + " Message: " + str(msg.payload))
 
 
