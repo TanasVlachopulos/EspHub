@@ -31,12 +31,12 @@ class MessageHandler(threading.Thread):
         else:
             print("connection error")
 
-        client.subscribe("test/#")
+        client.subscribe("#")
 
     @staticmethod
     def on_message(client, userdata, msg):
         print("Topic: " + msg.topic + " Message: " + str(msg.payload))
 
 
-handler_thread = MessageHandler("192.168.1.102", 1883, 30)
+handler_thread = MessageHandler("192.168.1.1", 1883, 30)
 handler_thread.start()
