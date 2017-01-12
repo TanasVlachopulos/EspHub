@@ -16,8 +16,8 @@ class Dba(object):
         con = self._get_connection()
         try:
             cur = con.cursor()
-            cur.execute("CREATE TABLE IF NOT EXISTS Devices(Mac TEXT PRIMARY KEY, Name TEXT, Ip TEXT, Provided_func TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS Records(Id INTEGER PRIMARY KEY, Mac TEXT, Time NUMERIC, Type TEXT, Value TEXT)")
+            cur.execute("CREATE TABLE IF NOT EXISTS Devices(Id TEXT PRIMARY KEY, Name TEXT, Provided_func TEXT)")
+            cur.execute("CREATE TABLE IF NOT EXISTS Records(Id INTEGER PRIMARY KEY, Device_id TEXT, Time NUMERIC, Type TEXT, Value TEXT)")
         except sql.Error as e:
             if con:
                 con.rollback()
@@ -36,26 +36,26 @@ class Dba(object):
             cur.row_factory = sql.Row  # return data from cursor as dictionary
             cur.execute("SELECT * FROM Devices")
             rows = cur.fetchall()
-            return [DAO.Device(x['Mac'], x['Name'], x['Ip'], x['Provided_func'].split(';')) for x in rows]
+            return [DAO.Device(x['Id'], x['Name'], x['Provided_func'].split(';')) for x in rows]
         except sql.Error as e:
             print(e.args[0])
             return None
         finally:
             con.close()
 
-    """ Get single device by Mac address """
-    def get_device(self, mac_address):
+    """ Get single device by id """
+    def get_device(self, device_id):
         con = self._get_connection()
         try:
             cur = con.cursor()
             cur.row_factory = sql.Row
-            cur.execute("SELECT * FROM Devices WHERE Mac=:Mac", {'Mac': mac_address})
+            cur.execute("SELECT * FROM Devices WHERE Id=:Id", {'Id': device_id})
             row = (cur.fetchall())[0]  # get first record
-            return DAO.Device(row['Mac'], row['Name'], row['Ip'], row['Provided_func'].split(';'))
+            return DAO.Device(row['Id'], row['Name'], row['Provided_func'].split(';'))
         except sql.Error as e:
             print(e.args[0])
             return None
-        except IndexError:  # when does not exist any record with given mac
+        except IndexError:  # when does not exist any record with given id
             return None
         finally:
             con.close()
@@ -65,22 +65,27 @@ class Dba(object):
         con = self._get_connection()
         try:
             cur = con.cursor()
-            cur.execute("INSERT INTO Devices(Mac, Name, Ip, Provided_func) VALUES (:Mac, :Name, :Ip, :Provided_func)",
-                        {'Mac': device.mac, 'Name': device.name, 'Ip': device.ip,
-                         'Provided_func': ';'.join(device.provided_func)})
+            cur.execute("INSERT INTO Devices(Id, Name, Provided_func) VALUES (:Id, :Name, :Provided_func)",
+                        {'Id': device.id, 'Name': device.name, 'Provided_func': ';'.join(device.provided_func)})
             con.commit()
         except sql.Error as e:
             print(e.args[0])
         finally:
             con.close()
 
+    # def remove_device(self, device_id):
+    #     con = self._get_connection()
+    #     try:
+    #         cur = con.cursor()
+    #         cur.execute("")
+
     """ Update list of provided function for one device """
-    def update_provided_func(self, mac, function):
+    def update_provided_func(self, id, function):
         con = self._get_connection()
         try:
             cur = con.cursor()
-            cur.execute("UPDATE Devices SET Provided_func=:provided_func WHERE Mac=:mac",
-                        {'provided_func': ';'.join(function), 'mac': mac})
+            cur.execute("UPDATE Devices SET Provided_func=:provided_func WHERE Id=:id",
+                        {'provided_func': ';'.join(function), 'id': id})
             con.commit()
         except sql.Error as e:
             print(e.args[0])
@@ -88,15 +93,15 @@ class Dba(object):
             con.close()
 
     """ Get all record from single device """
-    def get_record_from_device(self, device_mac):
+    def get_record_from_device(self, device_id):
         con = self._get_connection()
         try:
             cur = con.cursor()
             cur.row_factory = sql.Row  # return data from cursor as dictionary
-            cur.execute("SELECT * FROM Records WHERE Mac=:Mac",
-                        {"Mac": device_mac})
+            cur.execute("SELECT * FROM Records WHERE Device_id=:Device_id",
+                        {"Device_id": device_id})
             rows = cur.fetchall()
-            return [DAO.Record(x['Mac'], x['Time'], x['Type'], x['Value']) for x in rows]
+            return [DAO.Record(x['Device_id'], x['Time'], x['Type'], x['Value']) for x in rows]
         except sql.Error as e:
             print(e.args[0])
             return None
@@ -108,8 +113,8 @@ class Dba(object):
         con = self._get_connection()
         try:
             cur = con.cursor()
-            cur.execute("INSERT INTO Records(Mac, Time, Type, Value) VALUES(:Mac, :Time, :Type, :Value)",
-                        {'Mac': record.mac, 'Time': record.time, 'Type': record.type, 'Value': record.value})
+            cur.execute("INSERT INTO Records(Device_id, Time, Type, Value) VALUES(:Device_id, :Time, :Type, :Value)",
+                        {'Device_id': record.id, 'Time': record.time, 'Type': record.type, 'Value': record.value})
             con.commit()
         except sql.Error as e:
             print(e.args[0])

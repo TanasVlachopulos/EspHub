@@ -1,6 +1,7 @@
 from DatabaseAccess import *
 import time
 
+""" ############# OBSOLETE ############# """
 """ receive transmission from new device """
 """ check if exists record in DB and add device to DB """
 def new_device(args):
