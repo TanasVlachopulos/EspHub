@@ -1,3 +1,7 @@
+"""
+Aplication start point
+
+"""
 from DataCollector import DataCollector
 from DatabaseAccess import *
 from Commands import *

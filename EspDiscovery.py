@@ -1,3 +1,7 @@
+"""
+Send broadcast discovery message to devices
+"""
+
 import json
 import socket
 import threading

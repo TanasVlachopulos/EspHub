@@ -1,3 +1,8 @@
+"""
+Wrap mosquito MQTT client and provide basic for receiving and sending data to MQTT broker
+handle client and topics registrations
+"""
+
 import paho.mqtt.client as mqtt
 
 
