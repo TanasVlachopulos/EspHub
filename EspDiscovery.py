@@ -27,7 +27,7 @@ class EspDiscovery(threading.Thread):
 
 msg = json.dumps({"name": "testServer", "ip": "192.168.1.1", "port": 1883})
 
-esp_discovery = EspDiscovery('192.168.1.146', 11114, msg, 5)
+esp_discovery = EspDiscovery('192.168.1.255', 11114, msg, 5)
 esp_discovery.start()
 
 
