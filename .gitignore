@@ -1,3 +1,4 @@
 test.db
 .idea/*
-__pycache__/*
+*__pycache__*
+Presentation/WebUi/db.sqlite3
