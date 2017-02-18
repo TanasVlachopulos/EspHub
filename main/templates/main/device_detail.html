@@ -1,0 +1,64 @@
+{% extends "main/base.html" %}
+
+{% block title %}Device detail{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col s12 m6 l6">
+            <h3>{{ device.name }}</h3>
+        </div>
+        <div class="col s12 m6 l6">
+
+            <div class="right-align" style="padding-top: 2em">
+                <a class="waves-effect waves-light btn red darken-1" href="#modal-remove">Remove</a>
+                <a class="waves-effect waves-light btn blue-grey darken-1" href="#modal-edit">Edit</a>
+            </div>
+
+        </div>
+    </div>
+
+    {% include "main/device_detail_modals.html" with id=device.id %}
+
+    <div class="row">
+        <div class="col s12 m8 l8">
+            {% if actual_values %}
+                {% include 'main/device_detail_values_card.html' with actual_values=actual_values %}
+            {% endif %}
+            {% if actual_out_values %}
+                {% include 'main/device_detail_control_card.html' with actual_out_values=actual_out_values device_id=device.id %}
+            {% endif %}
+        </div>
+        <div class="col s12 m4 l4">
+            {% include 'main/device_detail_status_card.html' %}
+        </div>
+    </div>
+
+    <div class="row">
+        {% include 'main/device_detail_tabs.html' %}
+        <div id="test-swipe-1" class="col s12  grey lighten-4">
+            {% include "main/data_table.html" with rows=values %}
+        </div>
+        <div id="test-swipe-2" class="col s12 grey lighten-4">
+            {% include "main/data_table.html" with rows=values %}
+
+        </div>
+        <div id="test-swipe-3" class="col s12 grey lighten-4">
+            {% include "main/data_table.html" with rows=values %}
+
+        </div>
+    </div>
+
+    {% load static %}
+    <script type="text/javascript" src="{% static 'main/js/updateDeviceStatus.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/updateDeviceValues.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/outputActionsAjax.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/jquery.cookie.js' %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            updateDeviceStatus("{% url 'main:telemetry_api' device.id %}", {{ device_status_interval }});
+            updateDeviceValues("{% url 'main:device_actual_values_api' device.id %}", {{ device_values_interval }});
+            $('.modal').modal(); // init modal windows
+            $('ul.tabs').tabs({'swipeable': false}); // init tabs
+        });
+    </script>
+{% endblock %}

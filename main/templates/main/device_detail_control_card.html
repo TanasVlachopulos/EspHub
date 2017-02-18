@@ -1,0 +1,38 @@
+<div class="card light-blue darken-2">
+    <div class="card-content white-text">
+        <span class="card-title">Device control</span>
+        <table>
+            {% for value in actual_out_values %}
+                <tr>
+                    <td>{{ value.user_name }}</td>
+                    <td style="text-align:right">
+                        {% if value.category == 'switch' %}
+                            <!-- Switch -->
+                            {#                            action="{% url 'main:output_action' device_id value.name %}"#}
+                            <form>
+                                {% csrf_token %}
+                                <div class="switch switch-orange">
+                                    <label>
+                                        <span style="color: #fff;">Off</span>
+                                        <input type="checkbox" id="action-{{ value.name }}"
+                                               onchange='switchAjax("{% url 'main:output_action' device_id value.name %}", {{ device_id }}, "{{ value.name }}")'>
+                                        <span class="lever"></span>
+                                        <span style="color: #fff;">On</span>
+                                    </label>
+                                </div>
+                            </form>
+                        {% elif value.category == 'display' %}
+                            <!-- Display -->
+                            <a class="waves-effect waves-light btn-flat"><i
+                                    class="material-icons md-24 md-light">cast</i></a>
+                        {% elif value.category == 'button' %}
+                            <a class="waves-effect orange waves-light accent-2 btn" id="action-{{ value.name }}"
+                               onmousedown='buttonAjax("{% url 'main:output_action' device_id value.name %}", {{ device_id }}, "{{ value.name }}", "push")'
+                               onmouseup='buttonAjax("{% url 'main:output_action' device_id value.name %}", {{ device_id }}, "{{ value.name }}", "release")'>Push</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
