@@ -42,3 +42,18 @@ def get_actual_device_values(device_id, io_type='all'):
                 device_values.append(record_dict)
 
     return device_values
+
+
+def get_records_for_charts(device_id, value_type, from_date, to_date):
+    db = DBA.Dba(conf.get('db', 'path'))
+    records = db.get_record_from_device(device_id, value_type, limit=20)
+
+    values = [int(record.value) for record in records]
+    values.reverse()
+
+    response = {
+        'labels': list(reversed([record.time.isoformat() for record in records])),
+        'values': values,
+    }
+
+    return response

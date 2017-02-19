@@ -36,7 +36,10 @@
     <div class="row">
         {% include 'main/device_detail_tabs.html' %}
         <div id="test-swipe-1" class="col s12  grey lighten-4">
-            {% include "main/data_table.html" with rows=values %}
+            <div style="width: 100%;">
+                <canvas id="canvas-light" height="150"></canvas>
+            </div>
+{#            {% include "main/data_table.html" with rows=values %}#}
         </div>
         <div id="test-swipe-2" class="col s12 grey lighten-4">
             {% include "main/data_table.html" with rows=values %}
@@ -49,14 +52,19 @@
     </div>
 
     {% load static %}
+    <script type="text/javascript" src="{% static 'main/js_libs/Chart.bundle.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js_libs/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/jquery.cookie.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/updateDeviceStatus.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/updateDeviceValues.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/outputActionsAjax.js' %}"></script>
-    <script type="text/javascript" src="{% static 'main/js/jquery.cookie.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/deviceDetailChart.js' %}"></script>
+
     <script type="text/javascript">
         $(document).ready(function () {
             updateDeviceStatus("{% url 'main:telemetry_api' device.id %}", {{ device_status_interval }});
             updateDeviceValues("{% url 'main:device_actual_values_api' device.id %}", {{ device_values_interval }});
+            deviceDetailChart("{% url 'main:records_api' device.id 'light' %}", 'light');
             $('.modal').modal(); // init modal windows
             $('ul.tabs').tabs({'swipeable': false}); // init tabs
         });

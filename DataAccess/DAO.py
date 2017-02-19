@@ -50,7 +50,7 @@ class Record(object):
         self._time = value.timestamp()
 
     def __str__(self):
-        return '| ' + self.id + ' | ' + time.asctime(time.localtime(self.time)) + ' | ' + self.value_type + ' | ' + self.value + '|'
+        return '| ' + self.id + ' | ' + str(self._time) + ' | ' + self.name + ' | ' + self.value + '|'
 
 
 class Telemetry(object):
