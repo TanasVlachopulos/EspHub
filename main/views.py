@@ -150,9 +150,11 @@ def device_actual_values_api(request, device_id):
 
 def records_api(request, device_id, ability):
     response = get_records_for_charts(device_id, ability, 0, 0)
+
+    # convert datetime object to isoformat string
     response['chart_type'] = 'line'
+    response['data_type'] = ability
     response['data_label'] = ability
-    response['title'] = ability
     response['border_color'] = "#1e88e5"
     response['is_filled'] = 'false'
 

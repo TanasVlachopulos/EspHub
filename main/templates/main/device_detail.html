@@ -34,21 +34,30 @@
     </div>
 
     <div class="row">
-        {% include 'main/device_detail_tabs.html' %}
-        <div id="test-swipe-1" class="col s12  grey lighten-4">
-            <div style="width: 100%;">
-                <canvas id="canvas-light" height="150"></canvas>
+        {% include 'main/device_detail_tabs.html' with actual_values=actual_values %}
+
+        {% for value in actual_values %}
+            <div id="tab-{{ value.name }}" class="col s12 grey lighten-4">
+                <div style="width: 100%;">
+                    <canvas id="canvas-tab-{{ value.name }}" data-url="{% url 'main:records_api' device.id value.name %}"
+                            height="150"></canvas>
+                </div>
             </div>
-{#            {% include "main/data_table.html" with rows=values %}#}
-        </div>
-        <div id="test-swipe-2" class="col s12 grey lighten-4">
-            {% include "main/data_table.html" with rows=values %}
-
-        </div>
-        <div id="test-swipe-3" class="col s12 grey lighten-4">
-            {% include "main/data_table.html" with rows=values %}
-
-        </div>
+        {% endfor %}
+        {#        <div id="test-swipe-1" class="col s12  grey lighten-4">#}
+        {#            <div style="width: 100%;">#}
+        {#                <canvas id="canvas-light" height="150"></canvas>#}
+        {#            </div>#}
+        {#            {% include "main/data_table.html" with rows=values %}#}
+        {#        </div>#}
+        {#        <div id="test-swipe-2" class="col s12 grey lighten-4">#}
+        {#            {% include "main/data_table.html" with rows=values %}#}
+        {##}
+        {#        </div>#}
+        {#        <div id="test-swipe-3" class="col s12 grey lighten-4">#}
+        {#            {% include "main/data_table.html" with rows=values %}#}
+        {##}
+        {#        </div>#}
     </div>
 
     {% load static %}
@@ -64,9 +73,16 @@
         $(document).ready(function () {
             updateDeviceStatus("{% url 'main:telemetry_api' device.id %}", {{ device_status_interval }});
             updateDeviceValues("{% url 'main:device_actual_values_api' device.id %}", {{ device_values_interval }});
-            deviceDetailChart("{% url 'main:records_api' device.id 'light' %}", 'light');
+            deviceDetailChart('canvas-tab-light');
             $('.modal').modal(); // init modal windows
-            $('ul.tabs').tabs({'swipeable': false}); // init tabs
+            $('ul.tabs').tabs({
+                'swipeable': false,
+                'onShow': function (param) {
+                    console.log(param);
+                    console.log(param[0].id);
+                    deviceDetailChart('canvas-' + param[0].id);
+                }
+            }); // init tabs
         });
     </script>
 {% endblock %}
