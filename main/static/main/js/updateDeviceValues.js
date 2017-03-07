@@ -21,12 +21,12 @@ function updateDeviceValues(apiUrl, refreshInterval) {
                 $('#action-' + valueType).prop('checked', (item['value'] == 'on'));
             }
 
-            // update chart
+            // update chart in active card
             if (window.myLine != undefined && window.typeOfActiveChart == valueType) {
                 var line = window.myLine;
                 var length = line.data.labels.length;
                 line.data.datasets[0].data[length] = parseFloat(item['value']);
-                line.data.labels[length] = moment(item['time']).format('HH:mm:ss');
+                line.data.labels[length] = moment(item['time']).format('HH:mm');
                 line.update();
             }
         });

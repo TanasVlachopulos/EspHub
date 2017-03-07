@@ -78,8 +78,6 @@
             $('ul.tabs').tabs({
                 'swipeable': false,
                 'onShow': function (param) {
-                    console.log(param);
-                    console.log(param[0].id);
                     deviceDetailChart('canvas-' + param[0].id);
                 }
             }); // init tabs

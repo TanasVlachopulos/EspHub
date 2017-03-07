@@ -4,7 +4,6 @@ function deviceDetailChart(canvasId) {
     }
 
     var url = $('#' + canvasId)[0].attributes['data-url'].nodeValue;
-    console.log(url);
 
     $.getJSON(url, function (result) {
         if (!$.isEmptyObject(result)) {
@@ -17,10 +16,9 @@ function deviceDetailChart(canvasId) {
 }
 
 function _plotChart(result, canvasId) {
-    console.log(result);
     var formatedLabels = [];
     result['labels'].forEach(function (item, index) {
-        formatedLabels.push(moment(item).format('HH:mm:ss'));
+        formatedLabels.push(moment(item).format('HH:mm'));
     });
 
     if (result) {
