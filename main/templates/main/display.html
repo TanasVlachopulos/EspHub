@@ -39,34 +39,52 @@
 
                     <div class="card">
                         <div class="card-image">
-                            <embed src="{{ plot }}">
-                        </div>
-                        <div class="card-content">
-                            <div class="row">
-                                <div class="col s6 m3 l3">Device:</div>
-                                <div class="col s6 m3 l3"><span id="device-name-label">-</span></div>
-                                <div class="col s6 m3 l3">Ability:</div>
-                                <div class="col s6 m3 l3"><span id="ability-name-label">-</span></div>
-                            </div>
-                        </div>
 
+                            <div id="circle-loader" hidden>
+                                <div class='preloader-wrapper active'>
+                                    <div class='spinner-layer spinner-blue-only'>
+                                        <div class='circle-clipper left'>
+                                            <div class='circle'></div>
+                                        </div>
+                                        <div class='gap-patch'>
+                                            <div class='circle'></div>
+                                        </div>
+                                        <div class='circle-clipper right'>
+                                            <div class='circle'></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="plot-preview">
+
+                            </div>
+
+                            <div class="card-content">
+                                <div class="row">
+                                    <div class="col s6 m3 l3"><strong>Device:</strong></div>
+                                    <div class="col s6 m3 l3"><span id="device-name-label">-</span></div>
+                                    <div class="col s6 m3 l3"><strong>Ability:</strong></div>
+                                    <div class="col s6 m3 l3"><span id="ability-name-label">-</span></div>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 </div>
+
             </div>
 
         </div>
 
-    </div>
+        {% load static %}
+        <script type="text/javascript" src="{% static 'main/js/displaySelectAbility.js' %}"></script>
 
-    {% load static %}
-    <script type="text/javascript" src="{% static 'main/js/displaySelectAbility.js' %}"></script>
-
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('select').material_select();
-            $('.collapsible').collapsible();
-            Materialize.updateTextFields();
-        });
-    </script>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $('select').material_select();
+                $('.collapsible').collapsible();
+                Materialize.updateTextFields();
+            });
+        </script>
 
 {% endblock %}

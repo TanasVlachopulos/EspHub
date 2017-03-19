@@ -96,7 +96,6 @@ def display(request, ability_name, device_id):
         'options': ['plot', 'text'],
         'ability_name': ability_name,
         'plot': plot.render_to_base64(width=320, height=240),
-        'plot_svg': plot.render_to_svg(),
     }
 
     return render(request, 'main/display.html', response)
@@ -222,3 +221,17 @@ def records_api(request, device_id, ability):
     response['is_filled'] = 'false'
 
     return HttpResponse(json.dumps(response))
+
+
+def display_preview_api(request, device_id, ability):
+    """
+    Render Base64 plot preview for display setting page
+    :param request:
+    :param device_id: device ID
+    :param ability: ability name
+    :return: base64 uri with plot preview
+    """
+    plot_data = get_records_for_charts(device_id, ability, 0, 0)
+    plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
+
+    return HttpResponse(plot.render_to_base64(width=320, height=240))
