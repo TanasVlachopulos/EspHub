@@ -84,7 +84,7 @@ def get_all_input_abilities():
     output = []
     for record in records:
         abilities = json.loads(record.provided_func)
-        output_record = {'name': record.name}
+        output_record = {'name': record.name, 'id': record.id}
         abilities_list = []
         for ability in abilities:
             if ability['io'] == 'in':

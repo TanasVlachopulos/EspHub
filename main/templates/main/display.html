@@ -6,34 +6,66 @@
 
 {% block content %}
 
-    <h3>{{ ability_name|capfirst }} setting</h3>
-
-    {#    output type selector #}
     <div class="row">
-        <div class="input-field col s12 m5 l3">
-            <select id="output_type">
-                {% for item in options %}
-                    <option value="{{ item }}">{{ item|capfirst }}</option>
-                {% endfor %}
-            </select>
-            <label for="output_type">Output type</label>
+        <div class="col s12 m6 l6">
+            <h3>Display setting</h3>
+        </div>
+        <div class="col s12 m6 l6">
+
+            {# setting buttons #}
+            <div class="right-align" style="padding-top: 2em">
+                <a class="waves-effect waves-light btn red darken-1" href="#modal-remove">Remove screen</a>
+                <a class="waves-effect waves-light btn blue-grey darken-1" href="#modal-edit">Add screen</a>
+            </div>
+
         </div>
     </div>
 
     <div class="row">
-        <div class="col s12 m6 l4">
-            {#            render devices abilities menu #}
-            {% include 'main/display_device_menu.html' with devices=devices %}
+        <div class="col s12" style="margin-bottom: 1em;">
+            <ul class="tabs custom-tabs z-depth-1 blue-grey darken-1">
+                <li class="tab col s3"><a href="#tab-screen-1">Screen 1</a></li>
+            </ul>
         </div>
-        <div class="col s12 m6 l8">
-        <img src="{{ plot }}" width="410">
+
+        <div id="tab-screen-1" class="col s12">
+
+            <div class="row">
+                <div class="col s12 m6 l4">
+                    {# render devices abilities menu #}
+                    {% include 'main/display_device_menu.html' with devices=devices %}
+                </div>
+                <div class="col s12 m6 l8">
+
+                    <div class="card">
+                        <div class="card-image">
+                            <embed src="{{ plot }}">
+                        </div>
+                        <div class="card-content">
+                            <div class="row">
+                                <div class="col s6 m3 l3">Device:</div>
+                                <div class="col s6 m3 l3"><span id="device-name-label">-</span></div>
+                                <div class="col s6 m3 l3">Ability:</div>
+                                <div class="col s6 m3 l3"><span id="ability-name-label">-</span></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
         </div>
+
     </div>
+
+    {% load static %}
+    <script type="text/javascript" src="{% static 'main/js/displaySelectAbility.js' %}"></script>
 
     <script type="text/javascript">
         $(document).ready(function () {
             $('select').material_select();
             $('.collapsible').collapsible();
+            Materialize.updateTextFields();
         });
     </script>
 

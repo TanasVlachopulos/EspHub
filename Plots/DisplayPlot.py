@@ -19,3 +19,7 @@ class DisplayPlot(object):
             return self.chart.render_data_uri(width=width, height=height)
         else:
             return self.chart.render_data_uri()
+
+    def render_to_svg(self):
+        return self.chart.render()
+        # return self.chart.render_in_browser()

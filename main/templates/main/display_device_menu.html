@@ -6,10 +6,12 @@
                 <table>
                     {% for ability in device.abilities %}
                         <tr>
-                            <td>{{ ability.name }}</td>
+                            <td>{{ ability.user_name }}</td>
                             <td style="text-align:right">
-                                <a class="waves-effect waves-light btn-flat"><i
-                                        class="material-icons md-24">send</i></a>
+                                <a class="waves-effect waves-light btn-flat"
+                                   onclick="displaySelectAbility('{{ device.id }}', '{{ device.name }}','{{ ability.name }}', '{{ ability.user_name }}');">
+                                    <i class="material-icons md-24">send</i>
+                                </a>
                             </td>
                         </tr>
                     {% endfor %}

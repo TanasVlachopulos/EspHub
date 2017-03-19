@@ -9,6 +9,7 @@
         </div>
         <div class="col s12 m6 l6">
 
+            {# setting buttons #}
             <div class="right-align" style="padding-top: 2em">
                 <a class="waves-effect waves-light btn red darken-1" href="#modal-remove">Remove</a>
                 <a class="waves-effect waves-light btn blue-grey darken-1" href="#modal-edit">Edit</a>
@@ -17,8 +18,10 @@
         </div>
     </div>
 
+    {# modal windows for setting buttons #}
     {% include "main/device_detail_modals.html" with id=device.id %}
 
+    {# status and value cards #}
     <div class="row">
         <div class="col s12 m8 l8">
             {% if actual_values %}
@@ -33,6 +36,7 @@
         </div>
     </div>
 
+    {# tabs with charts #}
     <div class="row">
         {% include 'main/device_detail_tabs.html' with actual_values=actual_values %}
 
@@ -47,7 +51,7 @@
 
     </div>
 
-    {% load static %}
+    {% load static %} {# load javascript #}
     <script type="text/javascript" src="{% static 'main/js_libs/Chart.bundle.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js_libs/moment.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/jquery.cookie.js' %}"></script>

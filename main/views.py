@@ -95,7 +95,8 @@ def display(request, ability_name, device_id):
         'devices': get_all_input_abilities(),
         'options': ['plot', 'text'],
         'ability_name': ability_name,
-        'plot': plot.render_to_base64(width=320, height=240)
+        'plot': plot.render_to_base64(width=320, height=240),
+        'plot_svg': plot.render_to_svg(),
     }
 
     return render(request, 'main/display.html', response)
