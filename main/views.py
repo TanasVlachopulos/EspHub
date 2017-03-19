@@ -18,6 +18,11 @@ output_abilities = conf.get('db', 'output_abilities').split(',')
 
 
 def index(request):
+    """
+    Main page with list of all devices
+    :param request:
+    :return: Main page
+    """
     devices = Device.get_all()
 
     devices_id_lst = [device.id for device in devices]
@@ -31,6 +36,12 @@ def index(request):
 
 
 def device_detail(request, device_id):
+    """
+    Device detail page
+    :param request:
+    :param device_id: device ID
+    :return: device detail page
+    """
     db = DBA.Dba(conf.get('db', 'path'))
     device = db.get_device(device_id)
     # device = Device.get(device_id)
@@ -52,6 +63,11 @@ def device_detail(request, device_id):
 
 
 def waiting_devices(request):
+    """
+    List of all waiting device
+    :param request:
+    :return: waiting device page
+    """
     db = DBA.Dba(conf.get('db', 'path'))
     devices = db.get_waiting_devices()
 
@@ -64,7 +80,13 @@ def waiting_devices(request):
 
 
 def display(request, ability_name, device_id):
-
+    """
+    Display setting page - allow sendig data to connected displays
+    :param request:
+    :param ability_name: name od display ability
+    :param device_id: device ID
+    :return: display setting page
+    """
     response = {
         'devices': get_all_input_abilities(),
         'options': ['plot', 'text'],
@@ -131,6 +153,11 @@ def output_action(request, device_id, ability):
 
 
 def waiting_devices_api(request):
+    """
+    Provide data about waiting devices
+    :param request:
+    :return: JSON list of all waiting devices
+    """
     db = DBA.Dba(conf.get('db', 'path'))
     devices = db.get_waiting_devices()
 
@@ -139,6 +166,12 @@ def waiting_devices_api(request):
 
 
 def telemetry_api(request, device_id):
+    """
+    Provide actual telemetry data
+    :param request:
+    :param device_id: device ID
+    :return: JSON last telemetry record from DB
+    """
     db = DBA.Dba(conf.get('db', 'path'))
     telemetry = db.get_telemetry(device_id)
 
@@ -150,6 +183,12 @@ def telemetry_api(request, device_id):
 
 
 def device_actual_values_api(request, device_id):
+    """
+    Provide actual device values
+    :param request:
+    :param device_id: device ID
+    :return: JSON last values records from DB
+    """
     device_values = get_actual_device_values(device_id)
 
     # handle not serializable datetime objects in device_values
@@ -160,6 +199,13 @@ def device_actual_values_api(request, device_id):
 
 
 def records_api(request, device_id, ability):
+    """
+    Provide data for JS chart library
+    :param request:
+    :param device_id: device ID
+    :param ability: name of ability
+    :return: JSON with chart parameters and plot data with values and time lables
+    """
     response = get_records_for_charts(device_id, ability, 0, 0)
 
     # convert datetime object to isoformat string

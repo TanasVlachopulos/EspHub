@@ -8,6 +8,12 @@ conf = Config.Config().get_config()
 
 
 def get_actual_device_values(device_id, io_type='all'):
+    """
+    Get actual values of device (newest record from database) and prepare for device detail card
+    :param device_id: device ID
+    :param io_type: select in/out type of ability, default 'all' select both 'in' and 'out'
+    :return: JSON object with actual values, description, unit, ...
+    """
     db = DBA.Dba(conf.get('db', 'path'))
     device = db.get_device(device_id)
 
@@ -45,9 +51,17 @@ def get_actual_device_values(device_id, io_type='all'):
 
 
 def get_records_for_charts(device_id, value_type, from_date, to_date):
+    """
+    Get record from database for plot and charts
+    :param device_id: device ID
+    :param value_type: name of ability
+    :param from_date: start of time interval
+    :param to_date: end of time interval
+    :return: JSON object of time labels and values
+    """
     db = DBA.Dba(conf.get('db', 'path'))
     records = db.get_record_from_device(device_id, value_type, limit=300)
-
+    # TODO implement time interval from date - to date
     values = [float(record.value) for record in records]
     values.reverse()
 
@@ -61,6 +75,10 @@ def get_records_for_charts(device_id, value_type, from_date, to_date):
 
 
 def get_all_input_abilities():
+    """
+    Prepare input abilities for display setting
+    :return: JSON list of devices witch provide input abilities and input abilities
+    """
     db = DBA.Dba(conf.get('db', 'path'))
     records = db.get_devices()
     output = []
