@@ -8,7 +8,7 @@
 
     <h3>{{ ability_name|capfirst }} setting</h3>
 
-{#    output type selector #}
+    {#    output type selector #}
     <div class="row">
         <div class="input-field col s12 m5 l3">
             <select id="output_type">
@@ -22,8 +22,11 @@
 
     <div class="row">
         <div class="col s12 m6 l4">
-{#            render devices abilities menu #}
+            {#            render devices abilities menu #}
             {% include 'main/display_device_menu.html' with devices=devices %}
+        </div>
+        <div class="col s12 m6 l8">
+        <img src="{{ plot }}" width="410">
         </div>
     </div>
 

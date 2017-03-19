@@ -3,11 +3,11 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from .models import Device
-from datetime import datetime
 from .data_parsing import *
 from DataAccess import DBA, DAO
 from DeviceCom import DataSender
 from Config import Config
+from Plots import DisplayPlot
 
 # TODO handle 404 page not found error
 # TODO maximalizovat predavani hodnot do templatu - snizit pocet leteraru v templatech
@@ -87,10 +87,15 @@ def display(request, ability_name, device_id):
     :param device_id: device ID
     :return: display setting page
     """
+    plot_data = get_records_for_charts('8394748', 'DS18B20', 0, 0)
+    # print(plot_data)
+    plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
+
     response = {
         'devices': get_all_input_abilities(),
         'options': ['plot', 'text'],
         'ability_name': ability_name,
+        'plot': plot.render_to_base64(width=320, height=240)
     }
 
     return render(request, 'main/display.html', response)
