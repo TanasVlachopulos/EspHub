@@ -63,6 +63,17 @@ def waiting_devices(request):
     return render(request, 'main/waiting_devices.html', response)
 
 
+def display(request, ability_name, device_id):
+
+    response = {
+        'devices': get_all_input_abilities(),
+        'options': ['plot', 'text'],
+        'ability_name': ability_name,
+    }
+
+    return render(request, 'main/display.html', response)
+
+
 """ FORMS """
 
 

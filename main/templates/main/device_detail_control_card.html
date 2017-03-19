@@ -23,7 +23,7 @@
                             </form>
                         {% elif value.category == 'display' %}
                             <!-- Display -->
-                            <a class="waves-effect waves-light btn-flat"><i
+                            <a class="waves-effect waves-light btn-flat" href="{% url 'main:display' device_id value.name %}"><i
                                     class="material-icons md-24 md-light">cast</i></a>
                         {% elif value.category == 'button' %}
                             <a class="waves-effect orange waves-light accent-2 btn" id="action-{{ value.name }}"

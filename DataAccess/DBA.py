@@ -113,7 +113,7 @@ class _Dba(object):
             cur.row_factory = sql.Row  # return data from cursor as dictionary
             cur.execute("SELECT * FROM Devices")
             rows = cur.fetchall()
-            return [DAO.Device(x['Id'], x['Name'], x['Provided_func'].split(',')) for x in rows]
+            return [DAO.Device(x['Id'], x['Name'], x['Provided_func']) for x in rows]
         except sql.Error as e:
             print(e.args[0])
             return []

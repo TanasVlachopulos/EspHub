@@ -58,3 +58,22 @@ def get_records_for_charts(device_id, value_type, from_date, to_date):
     }
 
     return response
+
+
+def get_all_input_abilities():
+    db = DBA.Dba(conf.get('db', 'path'))
+    records = db.get_devices()
+    output = []
+    for record in records:
+        abilities = json.loads(record.provided_func)
+        output_record = {'name': record.name}
+        abilities_list = []
+        for ability in abilities:
+            if ability['io'] == 'in':
+                abilities_list.append(ability)
+
+        if len(abilities_list) != 0:
+            output_record['abilities'] = abilities_list
+            output.append(output_record)
+
+    return output

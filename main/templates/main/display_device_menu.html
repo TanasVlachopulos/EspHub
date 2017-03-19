@@ -1,0 +1,20 @@
+<ul class="collapsible" data-collapsible="accordion">
+    {% for device in devices %}
+        <li>
+            <div class="collapsible-header">{{ device.name }}</div>
+            <div class="collapsible-body">
+                <table>
+                    {% for ability in device.abilities %}
+                        <tr>
+                            <td>{{ ability.name }}</td>
+                            <td style="text-align:right">
+                                <a class="waves-effect waves-light btn-flat"><i
+                                        class="material-icons md-24">send</i></a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </li>
+    {% endfor %}
+</ul>

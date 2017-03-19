@@ -1,0 +1,37 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+    Display
+{% endblock %}
+
+{% block content %}
+
+    <h3>{{ ability_name|capfirst }} setting</h3>
+
+{#    output type selector #}
+    <div class="row">
+        <div class="input-field col s12 m5 l3">
+            <select id="output_type">
+                {% for item in options %}
+                    <option value="{{ item }}">{{ item|capfirst }}</option>
+                {% endfor %}
+            </select>
+            <label for="output_type">Output type</label>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s12 m6 l4">
+{#            render devices abilities menu #}
+            {% include 'main/display_device_menu.html' with devices=devices %}
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('select').material_select();
+            $('.collapsible').collapsible();
+        });
+    </script>
+
+{% endblock %}
