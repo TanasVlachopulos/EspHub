@@ -36,42 +36,12 @@
                     {% include 'main/display_device_menu.html' with devices=devices %}
                 </div>
                 <div class="col s12 m6 l8">
-
-                    <div class="card">
-                        <div class="card-image">
-
-                            <div id="circle-loader" hidden>
-                                <div class='preloader-wrapper active'>
-                                    <div class='spinner-layer spinner-blue-only'>
-                                        <div class='circle-clipper left'>
-                                            <div class='circle'></div>
-                                        </div>
-                                        <div class='gap-patch'>
-                                            <div class='circle'></div>
-                                        </div>
-                                        <div class='circle-clipper right'>
-                                            <div class='circle'></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="plot-preview">
-
-                            </div>
-
-                            <div class="card-content">
-                                <div class="row">
-                                    <div class="col s6 m3 l3"><strong>Device:</strong></div>
-                                    <div class="col s6 m3 l3"><span id="device-name-label">-</span></div>
-                                    <div class="col s6 m3 l3"><strong>Ability:</strong></div>
-                                    <div class="col s6 m3 l3"><span id="ability-name-label">-</span></div>
-                                </div>
-                            </div>
-
-                        </div>
+                    {# render display preview card with plot and screen settings #}
+                    {% include 'main/display_preview_card.html' %}
+                    <div class="right-align" style="width: 100%;">
+                        <a class="waves-effect waves-light btn green darken-1">SAVE</a>
                     </div>
                 </div>
-
             </div>
 
         </div>
