@@ -11,6 +11,7 @@ import DataAccess.DAO as DAO
 
 class _Dba(object):
     """ Save path to DB file and create tables if not exists """
+
     def __init__(self, path):
         self._path = path
         con = self._get_connection()
@@ -20,10 +21,14 @@ class _Dba(object):
         try:
             cur = con.cursor()
             cur.execute("CREATE TABLE IF NOT EXISTS Devices(Id TEXT PRIMARY KEY, Name TEXT, Provided_func TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS Records(Id INTEGER PRIMARY KEY, Device_id TEXT, Time NUMERIC, Type TEXT, Value TEXT)")
-            cur.execute("CREATE TABLE IF NOT EXISTS WaitingDevices(Device_id TEXT PRIMARY KEY, Name TEXT, provided_func TEXT)")
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS Records(Id INTEGER PRIMARY KEY, Device_id TEXT, Time NUMERIC, Type TEXT, Value TEXT)")
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS WaitingDevices(Device_id TEXT PRIMARY KEY, Name TEXT, provided_func TEXT)")
             cur.execute("CREATE TABLE IF NOT EXISTS Telemetry(Device_id TEXT PRIMARY KEY, Time NUMERIC, Rssi TEXT,"
                         " Heap TEXT, Cycles TEXT, Voltage TEXT, Ip TEXT, Mac TEXT, Ssid TEXT)")
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS Displays(Id INTEGER PRIMARY KEY, Device_id TEXT, Display_name TEXT, Screen_number INTEGER, Params TEXT)")
         except sql.Error as e:
             if con:
                 con.rollback()
@@ -39,8 +44,9 @@ class _Dba(object):
         con = self._get_connection()
         try:
             cur = con.cursor()
-            cur.execute("INSERT INTO WaitingDevices(Device_id, Name, Provided_func) VALUES (:Device_id, :Name, :Provided_func)",
-                        {'Device_id': device.id, 'Name': device.name, 'Provided_func': ','.join(device.provided_func)})
+            cur.execute(
+                "INSERT INTO WaitingDevices(Device_id, Name, Provided_func) VALUES (:Device_id, :Name, :Provided_func)",
+                {'Device_id': device.id, 'Name': device.name, 'Provided_func': ','.join(device.provided_func)})
             con.commit()
         except sql.Error as e:
             print(e.args[0])
@@ -102,10 +108,12 @@ class _Dba(object):
             con.close()
 
     """ Get connection object """
+
     def _get_connection(self):
         return sql.connect(self._path)
 
     """ Get list of all devices """
+
     def get_devices(self):
         con = self._get_connection()
         try:
@@ -121,6 +129,7 @@ class _Dba(object):
             con.close()
 
     """ Get single device by id """
+
     def get_device(self, device_id):
         con = self._get_connection()
         try:
@@ -138,6 +147,7 @@ class _Dba(object):
             con.close()
 
     """ Insert singe device to DB """
+
     def insert_device(self, device):
         con = self._get_connection()
         try:
@@ -165,6 +175,7 @@ class _Dba(object):
             con.close()
 
     """ Update list of provided function for one device """
+
     def update_provided_func(self, id, function):
         con = self._get_connection()
         try:
@@ -178,6 +189,7 @@ class _Dba(object):
             con.close()
 
     """ Get all record from single device """
+
     def get_record_from_device(self, device_id, value_type=None, order='desc', limit=600):
         con = self._get_connection()
         if value_type:
@@ -188,7 +200,8 @@ class _Dba(object):
         try:
             cur = con.cursor()
             cur.row_factory = sql.Row  # return data from cursor as dictionary
-            cur.execute(str.format("SELECT * FROM Records WHERE Device_id=:Device_id {} ORDER BY Time {} LIMIT {}", type_selector, order, limit),
+            cur.execute(str.format("SELECT * FROM Records WHERE Device_id=:Device_id {} ORDER BY TIME {} LIMIT {}",
+                                   type_selector, order, limit),
                         {"Device_id": device_id})
 
             rows = cur.fetchall()
@@ -200,6 +213,7 @@ class _Dba(object):
             con.close()
 
     """ Insert device record """
+
     def insert_record(self, record):
         con = self._get_connection()
         try:
@@ -220,8 +234,10 @@ class _Dba(object):
         con = self._get_connection()
         try:
             cur = con.cursor()
-            values = {'Device_id': telemetry.device_id, 'Time': telemetry.timestamp, 'Rssi': telemetry.rssi, 'Heap': telemetry.heap,
-                      'Cycles': telemetry.cycles, 'Voltage': telemetry.voltage, 'Ip': telemetry.ip, 'Mac': telemetry.mac, 'Ssid': telemetry.ssid}
+            values = {'Device_id': telemetry.device_id, 'Time': telemetry.timestamp, 'Rssi': telemetry.rssi,
+                      'Heap': telemetry.heap,
+                      'Cycles': telemetry.cycles, 'Voltage': telemetry.voltage, 'Ip': telemetry.ip,
+                      'Mac': telemetry.mac, 'Ssid': telemetry.ssid}
             cur.execute("INSERT OR REPLACE INTO Telemetry(Device_id, Time, Rssi, Heap, Cycles, Voltage, Ip, Mac, Ssid) "
                         "VALUES(:Device_id, :Time, :Rssi, :Heap, :Cycles, :Voltage, :Ip, :Mac, :Ssid)", values)
             con.commit()
@@ -253,6 +269,49 @@ class _Dba(object):
         finally:
             con.close()
 
+    def insert_display(self, display):
+        """
+        Insert display to DB or update existing
+        :param display: DAO object Display
+        """
+        con = self._get_connection()
+        try:
+            cur = con.cursor()
+            values = {'Device_id': display.device_id, 'Display_name': display.display_name,
+                      'Screen_number': display.screen_nuber, 'Params': display.params}
+            cur.execute("INSERT OR REPLACE INTO Displays(Device_id, Display_name, Screen_number, Params) "
+                        "VALUES(:Device_id, :Display_name, :Screen_number, :Params)", values)
+            con.commit()
+        except sql.Error as e:
+            print(e.args[0])
+        finally:
+            con.close()
+
+    def get_display(self, device_id, display_name):
+        """
+        Get all screen for single display
+        :param device_id: ID of device
+        :param display_name: ability name
+        :return: list of DAO objects Display
+        """
+        con = self._get_connection()
+        try:
+            cur = con.cursor()
+            cur.row_factory = sql.Row
+            cur.execute("SELECT * FROM Displays WHERE Device_id=:Device_id AND Display_name=:Display_name",
+                        {"Device_id": device_id, "Display_name": display_name})
+            rows = cur.fetchall()
+            return [DAO.Display(id=row['Id'], device_id=row['Device_id'], display_name=row['Display_name'],
+                                screen_number=row['Screen_number'], params=row['Params']) for row in rows]
+
+        except sql.Error as e:
+            print(e.args[0])
+            return None
+        except IndexError:
+            print("No item found")
+            return None
+        finally:
+            con.close()
 
 
 class Singleton(type):

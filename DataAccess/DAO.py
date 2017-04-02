@@ -122,3 +122,20 @@ class Ability(object):
     def __str__(self):
         return str.format("{} | {} | {} | {} | {} | {} | {}",
                           self.name, self.user_name, self.io, self.category, self.unit, self.default_value, self.desc)
+
+
+class Display(object):
+    """
+    Hold information about one display screen
+    :param id: Display unique ID
+    :param device_id: ID of parent device
+    :param display_name: name of device ability
+    :param screen_number: ID of display screen
+    :param params: additional settings in JSON format 
+    """
+    def __init__(self, **kwargs):
+        self._id = kwargs.get('id')
+        self.device_id = kwargs.get('device_id', '')
+        self.display_name = kwargs.get('display_name', '')
+        self.screen_nuber = kwargs.get('screen_number', 0)
+        self.params = kwargs.get('params', '')
