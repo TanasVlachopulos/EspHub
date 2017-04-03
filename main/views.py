@@ -87,15 +87,22 @@ def display(request, ability_name, device_id):
     :param device_id: device ID
     :return: display setting page
     """
-    plot_data = get_records_for_charts('8394748', 'DS18B20', 0, 0)
+    # plot_data = get_records_for_charts('8394748', 'DS18B20', 0, 0)
     # print(plot_data)
-    plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
+    # plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
+
+    db = DBA.Dba(conf.get('db', 'path'))
+    screens = db.get_display(device_id, ability_name)
+    for screen in screens:
+        print(screen)
+    screens_params = [json.loads(screen.params) for screen in screens]
+    print(screens_params)
 
     response = {
         'devices': get_all_input_abilities(),
         'options': ['plot', 'text'],
         'ability_name': ability_name,
-        'plot': plot.render_to_base64(width=320, height=240),
+        # 'plot': plot.render_to_base64(width=320, height=240),
     }
 
     return render(request, 'main/display.html', response)

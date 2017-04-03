@@ -3,7 +3,10 @@ Wrap mosquito MQTT client and provide basic for receiving and sending data to MQ
 handle client and topics registrations
 """
 
+from Config import Config
 import paho.mqtt.client as mqtt
+
+conf = Config.Config().get_config()
 
 
 class _MessageHandler(object):
@@ -14,7 +17,10 @@ class _MessageHandler(object):
         self.client = None
         self.is_connected = False
 
-        self._connect()
+        try:
+            self._connect()
+        except ConnectionRefusedError:
+            print(conf.get('msg', 'mqtt_error'))
 
     def _connect(self):
         self.client = mqtt.Client()
