@@ -64,3 +64,15 @@
     overflow: hidden;
     transition: color .28s ease;
 }
+
+/* Sticky footer */
+body {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+/* Sticky footer */
+main {
+    flex: 1 0 auto;
+}
