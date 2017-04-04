@@ -28,7 +28,7 @@ class _Dba(object):
             cur.execute("CREATE TABLE IF NOT EXISTS Telemetry(Device_id TEXT PRIMARY KEY, Time NUMERIC, Rssi TEXT,"
                         " Heap TEXT, Cycles TEXT, Voltage TEXT, Ip TEXT, Mac TEXT, Ssid TEXT)")
             cur.execute(
-                "CREATE TABLE IF NOT EXISTS Displays(Id INTEGER PRIMARY KEY, Device_id TEXT, Display_name TEXT, Screen_number INTEGER, Params TEXT)")
+                "CREATE TABLE IF NOT EXISTS Displays(Id INTEGER PRIMARY KEY, Device_id TEXT, Display_name TEXT, Screen_id INTEGER, Params TEXT)")
         except sql.Error as e:
             if con:
                 con.rollback()
@@ -278,9 +278,9 @@ class _Dba(object):
         try:
             cur = con.cursor()
             values = {'Device_id': display.device_id, 'Display_name': display.display_name,
-                      'Screen_number': display.screen_nuber, 'Params': display.params}
-            cur.execute("INSERT OR REPLACE INTO Displays(Device_id, Display_name, Screen_number, Params) "
-                        "VALUES(:Device_id, :Display_name, :Screen_number, :Params)", values)
+                      'Screen_id': display.screen_id, 'Params': display.params}
+            cur.execute("INSERT OR REPLACE INTO Displays(Device_id, Display_name, Screen_id, Params) "
+                        "VALUES(:Device_id, :Display_name, :Screen_id, :Params)", values)
             con.commit()
         except sql.Error as e:
             print(e.args[0])
@@ -302,7 +302,7 @@ class _Dba(object):
                         {"Device_id": device_id, "Display_name": display_name})
             rows = cur.fetchall()
             return [DAO.Display(id=row['Id'], device_id=row['Device_id'], display_name=row['Display_name'],
-                                screen_number=row['Screen_number'], params=row['Params']) for row in rows]
+                                screen_id=row['Screen_id'], params=row['Params']) for row in rows]
 
         except sql.Error as e:
             print(e.args[0])

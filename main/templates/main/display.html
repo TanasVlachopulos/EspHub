@@ -43,6 +43,15 @@
                     <div class="col s12 m6 l8">
                         {# render display preview card with plot and screen settings #}
                         {% include 'main/display_preview_card.html' with screen_num=forloop.counter %}
+
+                        <form id="setting-form-screen-{{ forloop.counter }}">
+                            {% csrf_token %}
+                            <input type="hidden" name="destination-device" value="{{ device_id }}">
+                            <input type="hidden" name="destination-display-name" value="{{ ability_name }}">
+                            <input type="hidden" name="destination-screen-id" value="{{ screen.id }}">
+                            <input type="hidden" id="data-source-device-{{ forloop.counter }}" name="data-source-device">
+                            <input type="hidden" id="data-source-ability-{{ forloop.counter }}" name="data-source-ability">
+                        </form>
                         <div class="right-align" style="width: 100%;">
                             <a class="waves-effect waves-light btn green darken-1">SAVE</a>
                         </div>

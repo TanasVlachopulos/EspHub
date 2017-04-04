@@ -103,7 +103,8 @@ def display(request, ability_name, device_id):
         'screens': screens,  # list of screen settings
         'devices': get_all_input_abilities(),  # list of all devices and their input abilities
         'options': ['plot', 'text'],
-        'ability_name': ability_name,  # head text
+        'ability_name': ability_name,
+        'device_id': device_id,
         # 'plot': plot.render_to_base64(width=320, height=240),
     }
 
