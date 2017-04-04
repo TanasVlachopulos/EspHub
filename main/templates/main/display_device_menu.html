@@ -9,7 +9,7 @@
                             <td>{{ ability.user_name }}</td>
                             <td style="text-align:right">
                                 <a class="waves-effect waves-light btn-flat"
-                                   onclick="displaySelectAbility('{% url 'main:display_preview_api' device.id ability.name %}','{{ device.id }}', '{{ device.name }}','{{ ability.name }}', '{{ ability.user_name }}');">
+                                   onclick="displaySelectAbility('{% url 'main:display_preview_api' device.id ability.name %}', '{{ device.name }}', '{{ ability.user_name }}');">
                                     <i class="material-icons md-24">send</i>
                                 </a>
                             </td>

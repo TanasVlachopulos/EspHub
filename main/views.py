@@ -98,10 +98,12 @@ def display(request, ability_name, device_id):
     screens_params = [json.loads(screen.params) for screen in screens]
     print(screens_params)
 
+
     response = {
-        'devices': get_all_input_abilities(),
+        'screens': screens,  # list of screen settings
+        'devices': get_all_input_abilities(),  # list of all devices and their input abilities
         'options': ['plot', 'text'],
-        'ability_name': ability_name,
+        'ability_name': ability_name,  # head text
         # 'plot': plot.render_to_base64(width=320, height=240),
     }
 
@@ -143,6 +145,12 @@ def verify_device(request, device_id):
 
 
 def remove_device(request, device_id):
+    """
+    Remove device from database
+    :param request: 
+    :param device_id: device ID
+    :return: redirect to home page
+    """
     db = DBA.Dba(conf.get('db', 'path'))
     if request.POST['remove-device'] == 'true':
         print('true')
@@ -152,6 +160,13 @@ def remove_device(request, device_id):
 
 
 def output_action(request, device_id, ability):
+    """
+    Provide output action to devices. Convert UI events (button click, switch switch, ...) to MQTT messages.
+    :param request:
+    :param device_id: device ID
+    :param ability: name of output ability
+    :return: simple 'ok' message
+    """
     if request.is_ajax() and request.POST['device'] == device_id:
         sender = DataSender.DataSender()
         sender.send_data_to_device(request.POST['device'], request.POST['ability'], request.POST['state'])
@@ -159,6 +174,10 @@ def output_action(request, device_id, ability):
         print('sending', request.POST['device'], request.POST['ability'], request.POST['state'])
 
     return HttpResponse('ok')
+
+
+def save_screen(request):
+    pass
 
 
 """ APIs """

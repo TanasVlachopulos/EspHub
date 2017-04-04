@@ -22,29 +22,36 @@
     </div>
 
     <div class="row">
+        {# screen tabs header pannel #}
         <div class="col s12" style="margin-bottom: 1em;">
             <ul class="tabs custom-tabs z-depth-1 blue-grey darken-1">
-                <li class="tab col s3"><a href="#tab-screen-1">Screen 1</a></li>
+                {% for screen in screens %}
+                    <li class="tab col s3"><a href="#tab-screen-{{ forloop.counter }}">Screen {{ forloop.counter }}</a></li>
+                {% endfor %}
             </ul>
         </div>
 
-        <div id="tab-screen-1" class="col s12">
+        {% for screen in screens %}
+            {# screen tabs #}
+            <div id="tab-screen-{{ forloop.counter }}" class="col s12">
 
-            <div class="row">
-                <div class="col s12 m6 l4">
-                    {# render devices abilities menu #}
-                    {% include 'main/display_device_menu.html' with devices=devices %}
-                </div>
-                <div class="col s12 m6 l8">
-                    {# render display preview card with plot and screen settings #}
-                    {% include 'main/display_preview_card.html' %}
-                    <div class="right-align" style="width: 100%;">
-                        <a class="waves-effect waves-light btn green darken-1">SAVE</a>
+                <div class="row">
+                    <div class="col s12 m6 l4">
+                        {# render devices abilities menu #}
+                        {% include 'main/display_device_menu.html' with devices=devices screen_num=forloop.counter %}
+                    </div>
+                    <div class="col s12 m6 l8">
+                        {# render display preview card with plot and screen settings #}
+                        {% include 'main/display_preview_card.html' with screen_num=forloop.counter %}
+                        <div class="right-align" style="width: 100%;">
+                            <a class="waves-effect waves-light btn green darken-1">SAVE</a>
+                        </div>
                     </div>
                 </div>
+
             </div>
 
-        </div>
+        {% endfor %}
 
         {% load static %}
         <script type="text/javascript" src="{% static 'main/js/displaySelectAbility.js' %}"></script>
