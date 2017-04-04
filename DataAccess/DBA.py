@@ -28,7 +28,7 @@ class _Dba(object):
             cur.execute("CREATE TABLE IF NOT EXISTS Telemetry(Device_id TEXT PRIMARY KEY, Time NUMERIC, Rssi TEXT,"
                         " Heap TEXT, Cycles TEXT, Voltage TEXT, Ip TEXT, Mac TEXT, Ssid TEXT)")
             cur.execute(
-                "CREATE TABLE IF NOT EXISTS Displays(Id INTEGER PRIMARY KEY, Device_id TEXT, Display_name TEXT, Screen_id INTEGER, Params TEXT)")
+                "CREATE TABLE IF NOT EXISTS Displays(Id INTEGER PRIMARY KEY, Device_id TEXT, Display_name TEXT, Screen_name TEXT, Params TEXT)")
         except sql.Error as e:
             if con:
                 con.rollback()
@@ -278,9 +278,26 @@ class _Dba(object):
         try:
             cur = con.cursor()
             values = {'Device_id': display.device_id, 'Display_name': display.display_name,
-                      'Screen_id': display.screen_id, 'Params': display.params}
-            cur.execute("INSERT OR REPLACE INTO Displays(Device_id, Display_name, Screen_id, Params) "
-                        "VALUES(:Device_id, :Display_name, :Screen_id, :Params)", values)
+                      'Screen_name': display.screen_name, 'Params': display.params}
+            cur.execute("INSERT OR REPLACE INTO Displays(Device_id, Display_name, Screen_name, Params) "
+                        "VALUES(:Device_id, :Display_name, :Screen_name, :Params)", values)
+            con.commit()
+        except sql.Error as e:
+            print(e.args[0])
+        finally:
+            con.close()
+
+    def update_display(self, display):
+        """
+        Update existing display
+        :param display: DAO object Display
+        :return: 
+        """
+        con = self._get_connection()
+        try:
+            cur = con.cursor()
+            cur.execute("UPDATE Displays SET Screen_name=:screen_name, Params=:params WHERE Id=:id",
+                        {'screen_name': display.screen_name, 'params': display.params, 'id': display.id})
             con.commit()
         except sql.Error as e:
             print(e.args[0])
@@ -302,8 +319,32 @@ class _Dba(object):
                         {"Device_id": device_id, "Display_name": display_name})
             rows = cur.fetchall()
             return [DAO.Display(id=row['Id'], device_id=row['Device_id'], display_name=row['Display_name'],
-                                screen_id=row['Screen_id'], params=row['Params']) for row in rows]
+                                screen_name=row['Screen_name'], params=row['Params']) for row in rows]
 
+        except sql.Error as e:
+            print(e.args[0])
+            return None
+        except IndexError:
+            print("No item found")
+            return None
+        finally:
+            con.close()
+
+    def get_screen(self, id):
+        """
+        Get single screen by ID
+        :param id: screen ID (primary INT key not optional attribute screen_name)
+        :return: single DAO object Display
+        """
+        con = self._get_connection()
+        try:
+            cur = con.cursor()
+            cur.row_factory = sql.Row
+            cur.execute("SELECT * FROM Displays WHERE Id=:id", {'id': id, })
+            row = cur.fetchone()
+
+            return DAO.Display(id=row['Id'], device_id=row['Device_id'], display_name=row['Display_name'],
+                                screen_name=row['Screen_name'], params=row['Params'])
         except sql.Error as e:
             print(e.args[0])
             return None

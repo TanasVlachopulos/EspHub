@@ -130,16 +130,16 @@ class Display(object):
     :param id: Display unique ID - Number
     :param device_id: ID of parent device - Text
     :param display_name: name of device ability - Text
-    :param screen_id: ID of display screen - Number
+    :param screen_name: ID of display screen - Number
     :param params: additional settings in JSON format - Text 
     """
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')
         self.device_id = kwargs.get('device_id', '')
         self.display_name = kwargs.get('display_name', '')
-        self.screen_id = kwargs.get('screen_id', 0)
+        self.screen_name = kwargs.get('screen_name', 0)
         self.params = kwargs.get('params', '')
 
     def __str__(self):
         return str.format("{} | {} | {} | {} | {}",
-                          str(self.id), self.device_id, self.display_name, str(self.screen_id), self.params)
+                          str(self.id), self.device_id, self.display_name, str(self.screen_name), self.params)

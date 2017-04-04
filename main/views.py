@@ -98,7 +98,6 @@ def display(request, ability_name, device_id):
     screens_params = [json.loads(screen.params) for screen in screens]
     print(screens_params)
 
-
     response = {
         'screens': screens,  # list of screen settings
         'devices': get_all_input_abilities(),  # list of all devices and their input abilities
@@ -178,8 +177,26 @@ def output_action(request, device_id, ability):
 
 
 def save_screen(request, device_id):
-    if request.is_ajax() and request.POST['destination-device'] == device_id:
-        print(request.POST)
+    if request.is_ajax() and request.POST.get('destination-device') == device_id and request.POST.get(
+            'destination-display-name'):
+
+        screen_id = request.POST.get('destination-screen-id')
+        screen_params = {'source_device': request.POST.get('data-source-device'),
+                         'source_ability': request.POST.get('data-source-ability')}
+
+        db = DBA.Dba(conf.get('db', 'path'))
+        if screen_id:
+            # update display setting (already have screen_id)
+            old_display = db.get_screen(screen_id)
+            old_display.params = json.dumps(screen_params)
+            db.update_display(old_display)
+
+        else:
+            # insert new display settings (dont have screen_id)
+            new_display = DAO.Display(device_id=request.POST.get('destination-device'),
+                                  display_name=request.POST.get('destination-display-name'),
+                                  params=json.dumps(screen_params))
+            db.insert_display(new_display)
 
     return HttpResponse('ok')
 
