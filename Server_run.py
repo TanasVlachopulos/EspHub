@@ -27,7 +27,7 @@ esp_discovery.start()
 # print(tel._time)
 # print(tel.time)
 
-# disp = DAO.Display(display_name='Dislay', device_id='928532', screen_number=1, params="{}")
+# disp = DAO.Display(display_name='Dislay', device_id='928532', screen_number=2, params="{}")
 # db = DBA.Dba(conf.get('db', 'path'))
 # db.insert_display(disp)
 
