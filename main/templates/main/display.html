@@ -26,7 +26,8 @@
         <div class="col s12" style="margin-bottom: 1em;">
             <ul class="tabs custom-tabs z-depth-1 blue-grey darken-1">
                 {% for screen in screens %}
-                    <li class="tab col s3"><a href="#tab-screen-{{ forloop.counter }}">Screen {{ forloop.counter }}</a></li>
+                    <li class="tab col s3"><a href="#tab-screen-{{ forloop.counter }}">Screen {{ forloop.counter }}</a>
+                    </li>
                 {% endfor %}
             </ul>
         </div>
@@ -49,11 +50,14 @@
                             <input type="hidden" name="destination-device" value="{{ device_id }}">
                             <input type="hidden" name="destination-display-name" value="{{ ability_name }}">
                             <input type="hidden" name="destination-screen-id" value="{{ screen.id }}">
-                            <input type="hidden" id="data-source-device-{{ forloop.counter }}" name="data-source-device">
-                            <input type="hidden" id="data-source-ability-{{ forloop.counter }}" name="data-source-ability">
+                            <input type="hidden" id="data-source-device-{{ forloop.counter }}"
+                                   name="data-source-device">
+                            <input type="hidden" id="data-source-ability-{{ forloop.counter }}"
+                                   name="data-source-ability">
                         </form>
                         <div class="right-align" style="width: 100%;">
-                            <a class="waves-effect waves-light btn green darken-1">SAVE</a>
+                            <a class="waves-effect waves-light btn green darken-1"
+                               onclick="saveDisplayScreenAjax('{% url 'main:save_screen' device_id %}', {{ forloop.counter }})">SAVE</a>
                         </div>
                     </div>
                 </div>
@@ -64,6 +68,9 @@
 
         {% load static %}
         <script type="text/javascript" src="{% static 'main/js/displaySelectAbility.js' %}"></script>
+        <script type="text/javascript" src="{% static 'main/js/saveDisplayScreenAjax.js' %}"></script>
+        <script type="text/javascript" src="{% static 'main/js/jquery.cookie.js' %}"></script>
+
 
         <script type="text/javascript">
             $(document).ready(function () {

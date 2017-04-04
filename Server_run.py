@@ -27,11 +27,11 @@ esp_discovery.start()
 # print(tel._time)
 # print(tel.time)
 
-disp = DAO.Display(display_name='dislay', device_id='928532', screen_number=1, params="{}")
-disp2 = DAO.Display(display_name='dislay', device_id='928532', screen_number=2, params="{}")
-db = DBA.Dba(conf.get('db', 'path'))
-db.insert_display(disp)
-db.insert_display(disp2)
+# disp = DAO.Display(display_name='dislay', device_id='928532', screen_number=1, params="{}")
+# disp2 = DAO.Display(display_name='dislay', device_id='928532', screen_number=2, params="{}")
+# db = DBA.Dba(conf.get('db', 'path'))
+# db.insert_display(disp)
+# db.insert_display(disp2)
 
 try:
     while True:

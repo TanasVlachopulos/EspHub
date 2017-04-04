@@ -177,8 +177,11 @@ def output_action(request, device_id, ability):
     return HttpResponse('ok')
 
 
-def save_screen(request):
-    pass
+def save_screen(request, device_id):
+    if request.is_ajax() and request.POST['destination-device'] == device_id:
+        print(request.POST)
+
+    return HttpResponse('ok')
 
 
 """ APIs """
