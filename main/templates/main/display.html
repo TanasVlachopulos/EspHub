@@ -43,7 +43,7 @@
                     </div>
                     <div class="col s12 m6 l8">
                         {# render display preview card with plot and screen settings #}
-                        {% include 'main/display_preview_card.html' with screen_num=forloop.counter %}
+                        {% include 'main/display_preview_card.html' with screen=screen screen_num=forloop.counter %}
 
                         <form id="setting-form-screen-{{ forloop.counter }}">
                             {% csrf_token %}

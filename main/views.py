@@ -91,15 +91,8 @@ def display(request, ability_name, device_id):
     # print(plot_data)
     # plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
 
-    db = DBA.Dba(conf.get('db', 'path'))
-    screens = db.get_display(device_id, ability_name)
-    for screen in screens:
-        print(screen)
-    screens_params = [json.loads(screen.params) for screen in screens]
-    print(screens_params)
-
     response = {
-        'screens': screens,  # list of screen settings
+        'screens': get_screen_list(device_id, ability_name),  # list of screen settings
         'devices': get_all_input_abilities(),  # list of all devices and their input abilities
         'options': ['plot', 'text'],
         'ability_name': ability_name,
@@ -177,6 +170,12 @@ def output_action(request, device_id, ability):
 
 
 def save_screen(request, device_id):
+    """
+    Receive screen parameters from display setting. Insert or update existing screen from DB. Action for 'add screen' and 'save' btn. 
+    :param request: 
+    :param device_id: parent device ID
+    :return: 
+    """
     if request.is_ajax() and request.POST.get('destination-device') == device_id and request.POST.get(
             'destination-display-name'):
 
@@ -194,8 +193,8 @@ def save_screen(request, device_id):
         else:
             # insert new display settings (dont have screen_id)
             new_display = DAO.Display(device_id=request.POST.get('destination-device'),
-                                  display_name=request.POST.get('destination-display-name'),
-                                  params=json.dumps(screen_params))
+                                      display_name=request.POST.get('destination-display-name'),
+                                      params=json.dumps(screen_params))
             db.insert_display(new_display)
 
     return HttpResponse('ok')
@@ -278,7 +277,5 @@ def display_preview_api(request, device_id, ability):
     :param ability: ability name
     :return: base64 uri with plot preview
     """
-    plot_data = get_records_for_charts(device_id, ability, 0, 0)
-    plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
 
-    return HttpResponse(plot.render_to_base64(width=320, height=240))
+    return HttpResponse(render_plot_64base_preview(device_id, ability))

@@ -1,8 +1,9 @@
 import json
 
 from DataAccess import DBA, DAO
-from DeviceCom import DataSender
 from Config import Config
+from Plots import DisplayPlot
+
 
 conf = Config.Config().get_config()
 
@@ -95,3 +96,21 @@ def get_all_input_abilities():
             output.append(output_record)
 
     return output
+
+
+def render_plot_64base_preview(device_id, ability):
+    plot_data = get_records_for_charts(device_id, ability, 0, 0)
+    plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
+
+    return plot.render_to_base64(width=320, height=240)
+
+
+def get_screen_list(device_id, ability_name):
+    db = DBA.Dba(conf.get('db', 'path'))
+    screens = db.get_display(device_id, ability_name)
+
+    for screen in screens:
+        screen.params = json.loads(screen.params)
+        screen.params['base64_plot'] = render_plot_64base_preview(device_id, ability_name)
+
+    return screens

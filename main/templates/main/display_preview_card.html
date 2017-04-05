@@ -20,15 +20,21 @@
 
         {# plot preview #}
         <div id="plot-preview-{{ screen_num }}">
-
+            {% if screen.params.base64_plot %}
+{#                <embed src='" + {{ screen.params.base64_plot }} + "'>#}
+            {% endif %}
         </div>
 
         <div class="card-content">
             <div class="row">
                 <div class="col s6 m3 l3"><strong>Device:</strong></div>
-                <div class="col s6 m3 l3"><span id="device-name-label-{{ screen_num }}">-</span></div>
+                <div class="col s6 m3 l3"><span
+                        id="device-name-label-{{ screen_num }}">{{ screen.params.source_device|default:"-" }}</span>
+                </div>
                 <div class="col s6 m3 l3"><strong>Ability:</strong></div>
-                <div class="col s6 m3 l3"><span id="ability-name-label-{{ screen_num }}">-</span></div>
+                <div class="col s6 m3 l3"><span
+                        id="ability-name-label-{{ screen_num }}">{{ screen.params.source_ability|default:"-" }}</span>
+                </div>
             </div>
         </div>
 
