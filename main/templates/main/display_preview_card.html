@@ -21,7 +21,7 @@
         {# plot preview #}
         <div id="plot-preview-{{ screen_num }}">
             {% if screen.params.base64_plot %}
-{#                <embed src='" + {{ screen.params.base64_plot }} + "'>#}
+                <embed src='{{ screen.params.base64_plot }}'>
             {% endif %}
         </div>
 
@@ -29,11 +29,11 @@
             <div class="row">
                 <div class="col s6 m3 l3"><strong>Device:</strong></div>
                 <div class="col s6 m3 l3"><span
-                        id="device-name-label-{{ screen_num }}">{{ screen.params.source_device|default:"-" }}</span>
+                        id="device-name-label-{{ screen_num }}">{{ screen.params.source_device_name|default:"-" }}</span>
                 </div>
                 <div class="col s6 m3 l3"><strong>Ability:</strong></div>
                 <div class="col s6 m3 l3"><span
-                        id="ability-name-label-{{ screen_num }}">{{ screen.params.source_ability|default:"-" }}</span>
+                        id="ability-name-label-{{ screen_num }}">{{ screen.params.source_ability_name|default:"-" }}</span>
                 </div>
             </div>
         </div>

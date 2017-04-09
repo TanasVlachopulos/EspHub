@@ -4,7 +4,6 @@ from DataAccess import DBA, DAO
 from Config import Config
 from Plots import DisplayPlot
 
-
 conf = Config.Config().get_config()
 
 
@@ -110,7 +109,18 @@ def get_screen_list(device_id, ability_name):
     screens = db.get_display(device_id, ability_name)
 
     for screen in screens:
-        screen.params = json.loads(screen.params)
-        screen.params['base64_plot'] = render_plot_64base_preview(device_id, ability_name)
+        screen.params = json.loads(screen.params)  # parse screen setting like source device and ability
+        source_device = db.get_device(
+            screen.params.get('source_device'))  # load device to determine user names of device and ability
 
+        screen.params['source_device_name'] = source_device.name
+
+        # extract ability user name from provided_function JSON
+        source_device_abilities = json.loads(source_device.provided_func)
+        for ability in source_device_abilities:
+            if ability.get('name') == screen.params.get('source_ability'):
+                screen.params['source_ability_name'] = ability.get('user_name')
+
+        screen.params['base64_plot'] = render_plot_64base_preview(screen.params.get('source_device'),
+                                                                  screen.params.get('source_ability'))
     return screens

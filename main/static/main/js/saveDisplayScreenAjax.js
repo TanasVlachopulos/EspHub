@@ -1,5 +1,8 @@
 function saveDisplayScreenAjax(url, screenNum) {
     if (setCsrf()) {
+        // disable save button
+        $('#btn-save-' + screenNum).addClass('disabled');
+
         $.post(url, $('#setting-form-screen-' + screenNum).serialize());
     }
 }

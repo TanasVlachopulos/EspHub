@@ -56,7 +56,7 @@
                                    name="data-source-ability">
                         </form>
                         <div class="right-align" style="width: 100%;">
-                            <a class="waves-effect waves-light btn green darken-1"
+                            <a class="waves-effect waves-light btn green darken-1 disabled" id="btn-save-{{ forloop.counter }}"
                                onclick="saveDisplayScreenAjax('{% url 'main:save_screen' device_id %}', {{ forloop.counter }})">SAVE</a>
                         </div>
                     </div>
