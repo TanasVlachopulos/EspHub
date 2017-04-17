@@ -1,9 +1,23 @@
 import pygal as pygal
+# import cairosvg
 
 
 class DisplayPlot(object):
     def __init__(self, values, x_labels=None, type='line', x_title=None, y_title=None, title=None, color=None,
                  show_dots=False, show_legend=False, x_label_rotation=0):
+        """
+        Generate plot for remote display
+        :param values: 
+        :param x_labels: 
+        :param type: 
+        :param x_title: 
+        :param y_title: 
+        :param title: 
+        :param color: 
+        :param show_dots: 
+        :param show_legend: 
+        :param x_label_rotation: 
+        """
 
         self.config = pygal.Config(show_dots=show_dots, show_legend=show_legend, x_label_rotation=x_label_rotation)
 
