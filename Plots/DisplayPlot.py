@@ -33,9 +33,12 @@ class DisplayPlot(object):
         else:
             return self.chart.render_data_uri()
 
-    def render_to_png(self):
+    def render_to_png(self, filename, width=None, height=None):
         try:
             import cairosvg
-            return self.chart.render_to_png("testfig2.png")
+            if width and height:
+                return self.chart.render_to_png(filename, width=width, height=height)
+            else:
+                return self.chart.render_to_png(filename)
         except OSError:
             print("Error loading module cairosvg (convert svg plot to png file)")
