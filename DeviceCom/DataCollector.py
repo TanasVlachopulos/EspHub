@@ -51,6 +51,7 @@ class DataCollector(object):
         if self.db.get_device(data['id']):
             reply = {"ip": conf.get('mqtt', 'ip'), "port": conf.getint('mqtt', 'port')}
             self.mqtt.publish(str.format("esp_hub/device/{}/accept", data['id']), json.dumps(reply))
+            # TODO load MQTT strings from config file
         else:
             provided_func = data['ability']
             provided_func = provided_func.replace('[', '')

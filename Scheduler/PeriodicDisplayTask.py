@@ -3,10 +3,17 @@ import time
 import json
 from DataAccess import DBA, DAO
 from Config import Config
+from DeviceCom import MessageHandler, DisplayController
 
 
 class PeriodicDisplayTask(threading.Thread):
     def __init__(self):
+        """
+        Display event scheduler - periodically read tasks from task file (JSON) and schedule events
+        Read data from DB >> render plot >> convert plot to standard format (display size ong or byte array) >> 
+            >> obtain MQTT connection from MessageHandler >> pass data to Display controller >> 
+            >> [DisplayController] convert image to line format >> [DisplayController] transmit via MQTT
+        """
         threading.Thread.__init__(self)
         self.conf = Config.Config().get_config()
         self.schedule_file_name = self.conf.get('scheduler', 'task_file')
@@ -38,7 +45,13 @@ class PeriodicDisplayTask(threading.Thread):
             self.screen_index[device_id + ';' + display_name] = 0
             screen = screens[0]
 
+        mqtt_handler = MessageHandler.MessageHandler(self.conf.get('mqtt', 'ip'), self.conf.get('mqtt', 'port'))
+        display_controller = DisplayController.DisplayController(mqtt_handler.get_client_instance(),
+                                                                 str.format("{}/{}/{}",
+                                                                            self.conf.get('mqtt', 'base_msg'),
+                                                                            device_id, display_name))
         # TODO magic with generating plot and sending to MQTT
+        # display_controller.draw_bitmap()
 
     def run(self):
         """

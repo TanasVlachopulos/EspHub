@@ -61,7 +61,22 @@ class _MessageHandler(object):
             self.register_topic(topic, callback)
 
     def publish(self, topic, payload, qos=0, retain=False):
+        """
+        Wrap MQTT publish 
+        :param topic: Message topic
+        :param payload: Message content
+        :param qos: Message QOS (default 0)
+        :param retain: Is retain message (default false)
+        :return: None
+        """
         self.client.publish(topic, payload, qos=qos, retain=retain)
+
+    def get_client_instance(self):
+        """
+        Provide raw client instance
+        :return: instance of MQTT paho client
+        """
+        return self.client
 
 
 class Singleton(type):
