@@ -1,5 +1,5 @@
 import pygal as pygal
-# import cairosvg
+import cairosvg
 
 
 class DisplayPlot(object):
@@ -35,5 +35,5 @@ class DisplayPlot(object):
             return self.chart.render_data_uri()
 
     def render_to_svg(self):
-        return self.chart.render()
+        return self.chart.render_to_png("testfig2.png")
         # return self.chart.render_in_browser()
