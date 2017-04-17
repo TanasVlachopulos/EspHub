@@ -1,6 +1,7 @@
 import json
 from time import sleep
-from . import EscposImage as esci
+
+from DeviceCom import EscposImage as esci
 
 
 class DisplayController(object):
