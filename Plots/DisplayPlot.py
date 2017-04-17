@@ -1,5 +1,4 @@
 import pygal as pygal
-import cairosvg
 
 
 class DisplayPlot(object):
@@ -34,6 +33,9 @@ class DisplayPlot(object):
         else:
             return self.chart.render_data_uri()
 
-    def render_to_svg(self):
-        return self.chart.render_to_png("testfig2.png")
-        # return self.chart.render_in_browser()
+    def render_to_png(self):
+        try:
+            import cairosvg
+            return self.chart.render_to_png("testfig2.png")
+        except OSError:
+            print("Error loading module cairosvg (convert svg plot to png file)")
