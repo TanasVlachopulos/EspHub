@@ -37,7 +37,7 @@ class PeriodicDisplayTask(threading.Thread):
 
         screens = self.db.get_display(device_id, display_name)  # all screen from single display
         screen = None  # current screen
-        key = str(device_id) + ':' + str(display_name)
+        key = str(device_id) + '-' + str(display_name)
 
         # rotates between all display screen
         if str.format(key) in self.screen_index:
