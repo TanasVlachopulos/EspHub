@@ -2,6 +2,7 @@ import threading
 import time
 import json
 import schedule
+from PIL import Image
 from DataAccess import DBA, DAO
 from Config import Config
 from DeviceCom import MessageHandler, DisplayController
@@ -53,7 +54,7 @@ class PeriodicDisplayTask(threading.Thread):
         mqtt_handler = MessageHandler.MessageHandler(self.conf.get('mqtt', 'ip'), self.conf.getint('mqtt', 'port'))
         # provide display remote control functions
         display_controller = DisplayController.DisplayController(mqtt_handler.get_client_instance(),
-                                                                 str.format("{}/{}/{}",
+                                                                 str.format("{}{}/{}",
                                                                             self.conf.get('discovery', 'base_msg'),
                                                                             device_id, display_name))
 
@@ -67,11 +68,15 @@ class PeriodicDisplayTask(threading.Thread):
         values.reverse()
 
         plot = DisplayPlot.DisplayPlot(values, x_label_rotation=90)
-        plot.render_to_png(key + '.png', width=320, height=240)
+        plot.render_to_png(key + '.png', width=self.conf.getint('devices', 'ILI9341_width'),
+                           height=self.conf.getint('devices', 'ILI9341_height'))  # generate plot to png file
 
         # TODO convert plot to bitmap with display size
-        # TODO send to MQTT
-        # display_controller.draw_bitmap()
+        img = Image.open(key + '.png')
+        img = img.transpose(Image.ROTATE_90)
+        # img.show()
+
+        display_controller.draw_bitmap(img)
         print(screen)
 
     def _create_tasks(self):
