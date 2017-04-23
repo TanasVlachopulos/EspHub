@@ -67,7 +67,7 @@ class PeriodicDisplayTask(threading.Thread):
         values.reverse()
 
         plot = DisplayPlot.DisplayPlot(values, x_label_rotation=90)
-        plot.render_to_png(key + '.png', width=240, height=320)
+        plot.render_to_png(key + '.png', width=320, height=240)
 
         # TODO convert plot to bitmap with display size
         # TODO send to MQTT
