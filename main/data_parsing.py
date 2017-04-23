@@ -59,8 +59,9 @@ def get_records_for_charts(device_id, value_type, from_date, to_date):
     :param to_date: end of time interval
     :return: JSON object of time labels and values
     """
+    # TODO move this logic to DB layer
     db = DBA.Dba(conf.get('db', 'path'))
-    records = db.get_record_from_device(device_id, value_type, limit=300)
+    records = db.get_record_from_device(device_id, value_type, limit=conf.getint('db', 'default_records_limit'))
     # TODO implement time interval from date - to date
     values = [float(record.value) for record in records]
     values.reverse()

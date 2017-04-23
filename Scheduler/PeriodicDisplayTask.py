@@ -5,6 +5,7 @@ import schedule
 from DataAccess import DBA, DAO
 from Config import Config
 from DeviceCom import MessageHandler, DisplayController
+from Plots import DisplayPlot
 
 
 class PeriodicDisplayTask(threading.Thread):
@@ -48,13 +49,28 @@ class PeriodicDisplayTask(threading.Thread):
             self.screen_index[key] = 0
             screen = screens[0]
 
-        # mqtt_handler = MessageHandler.MessageHandler(self.conf.get('mqtt', 'ip'), self.conf.get('mqtt', 'port'))
-        # display_controller = DisplayController.DisplayController(mqtt_handler.get_client_instance(),
-        #                                                          str.format("{}/{}/{}",
-        #                                                                     self.conf.get('mqtt', 'base_msg'),
-        #                                                                     device_id, display_name))
+        # handle MQTT connection
+        mqtt_handler = MessageHandler.MessageHandler(self.conf.get('mqtt', 'ip'), self.conf.getint('mqtt', 'port'))
+        # provide display remote control functions
+        display_controller = DisplayController.DisplayController(mqtt_handler.get_client_instance(),
+                                                                 str.format("{}/{}/{}",
+                                                                            self.conf.get('discovery', 'base_msg'),
+                                                                            device_id, display_name))
 
-        # TODO magic with generating plot and sending to MQTT
+        # TODO move this logic to DB layer
+        screen_action = json.loads(screen.params)
+        records = self.db.get_record_from_device(screen_action.get('source_device'),
+                                                 screen_action.get('source_ability'),
+                                                 limit=self.conf.getint('db', 'default_records_limit'))
+        # TODO implement time interval from date - to date
+        values = [float(record.value) for record in records]
+        values.reverse()
+
+        plot = DisplayPlot.DisplayPlot(values, x_label_rotation=90)
+        plot.render_to_png(key + '.png', width=240, height=320)
+
+        # TODO convert plot to bitmap with display size
+        # TODO send to MQTT
         # display_controller.draw_bitmap()
         print(screen)
 
