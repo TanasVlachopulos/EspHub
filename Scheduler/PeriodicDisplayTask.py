@@ -67,12 +67,14 @@ class PeriodicDisplayTask(threading.Thread):
         values = [float(record.value) for record in records]
         values.reverse()
 
+        data_folder_path = self.conf.get('db', 'data_files_path')
+
         plot = DisplayPlot.DisplayPlot(values, x_label_rotation=90)
-        plot.render_to_png(key + '.png', width=self.conf.getint('devices', 'ILI9341_width'),
+        plot.render_to_png(data_folder_path + key + '.png', width=self.conf.getint('devices', 'ILI9341_width'),
                            height=self.conf.getint('devices', 'ILI9341_height'))  # generate plot to png file
 
-        # TODO convert plot to bitmap with display size
-        img = Image.open(key + '.png')
+        # TODO pass bitmap to display controller without saving image
+        img = Image.open(data_folder_path + key + '.png')
         img = img.transpose(Image.ROTATE_90)
         # img.show()
 
