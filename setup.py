@@ -1,9 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='esphub',
+    name='EspHubServer',
     version='0.1',
     author='Tanasis Vlachopulos',
+    # package_dir={'.': 'EspHubServer'},
+    packages=find_packages(),
+    include_package_data=True,
     install_requires=[
         'Click',
         'Django',
@@ -15,8 +18,7 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        esphub=esphub:start
+        esphub=EspHubServer.esphub:cli
     ''',
-    # packages=find_packages(),
-    # include_package_data=True,
+        # tcmd=Plots.test:cli
 )
