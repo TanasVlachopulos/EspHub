@@ -2,6 +2,7 @@ from django.core.management import call_command
 from Config import Config
 from DeviceCom import DataCollector as Collector
 from DeviceCom import EspDiscovery as Discovery
+from Scheduler import PeriodicDisplayTask
 import django
 import os
 import sys
@@ -56,8 +57,8 @@ def _collect_data(endless=True):
 
 @click.group()
 def cli():
-    """EspHub home automatization server"""
-    sys.path.append('/WebUi')
+    """EspHub home automation server"""
+    sys.path.append('./WebUi')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'WebUi.settings')
 
 
@@ -73,22 +74,26 @@ def start(discovery, collecting, address_port):
     Arguments:
         ipaddr:port     Optional port number, or ipaddr:port
     """
-    if discovery:
-        _device_discovery(endless=False)
-    else:
-        click.echo("discovery disabled")
-
+    # start collecting data
     if collecting:
         _collect_data(endless=False)
     else:
         click.echo("collecting disabled")
 
-    click.echo("Start server")
+    # start discovery protocol
+    if discovery:
+        _device_discovery(endless=False)
+    else:
+        click.echo("discovery disabled")
 
     # load default ip and port from config
     if not address_port:
         conf = Config.Config().get_config()
         address_port = str.format('{}:{}', conf.get('main', 'ip'), conf.get('main', 'port'))
+
+    # start task scheduler
+    task = PeriodicDisplayTask.PeriodicDisplayTask()
+    task.start()
 
     django.setup()
     call_command('runserver', address_port, use_reloader=False)  # use_reloader=False prevent running start function twice
