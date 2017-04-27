@@ -14,6 +14,7 @@ setup(
         'Pillow',
         'pygal',
         'schedule',
+        'configparser',
         # 'cairosvg',
     ],
     entry_points='''
