@@ -10,7 +10,7 @@ from DataAccess import DAO, DBA
 
 conf = Config.Config().get_config()
 
-#TODO osetrit chyby kt. tato trida vyzahuje pokud se nemuze pripojit na broadcast
+# TODO osetrit chyby kt. tato trida vyzahuje pokud se nemuze pripojit na broadcast
 collector.DataCollector(conf.get('db', 'path'), 'config')
 
 msg = json.dumps({"name": conf.get('mqtt', 'server_name'),
