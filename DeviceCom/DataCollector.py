@@ -11,11 +11,12 @@ conf = Config.Config().get_config()
 
 
 class DataCollector(object):
-    def __init__(self, database_path, config_file):
+    def __init__(self, database_path, config_file=None):
         self.db = DBA.Dba(conf.get('db', 'path'))
         self.topics = {"esp_hub/device/hello": self.new_device_callback,
                        "esp_hub/device/+/telemetry": self.telemetry_callback,
                        "esp_hub/device/+/data": self.data_callback}
+        # TODO replace with config
 
         self.mqtt = MessageHandler(conf.get('mqtt', 'ip'), conf.getint('mqtt', 'port'))
         self.mqtt.register_topics(self.topics)
