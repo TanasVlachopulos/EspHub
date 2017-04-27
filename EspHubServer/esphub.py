@@ -1,15 +1,24 @@
 from django.core.management import call_command
+from django.core.management.commands.runserver import BaseRunserverCommand
 from Config import Config
 from DeviceCom import DataCollector as Collector
 from DeviceCom import EspDiscovery as Discovery
 from Scheduler import PeriodicDisplayTask
 # from .. import run_django
+import threading
 import django
 import os
 import sys
 import json
 import time
 import click
+
+
+class HackedRunserver(BaseRunserverCommand):
+    def inner_run(self, *args, **options):
+        print('before runserver')
+        super(HackedRunserver, self).inner_run(*args, **options)
+        print('after runserver')
 
 
 def _device_discovery(endless=True):
@@ -24,18 +33,25 @@ def _device_discovery(endless=True):
                       "ip": conf.get('mqtt', 'ip'),
                       "port": conf.getint('mqtt', 'port')})
 
+    run_event = threading.Event()
+    run_event.set()
+
     esp_discovery = Discovery.EspDiscovery(conf.get('discovery', 'broadcast'),
                                            conf.getint('discovery', 'port'),
                                            msg,
-                                           conf.getint('discovery', 'interval'))
-    esp_discovery.start()
+                                           conf.getint('discovery', 'interval'),
+                                           run_event)
+    try:
+        esp_discovery.start()
 
-    if endless:
-        try:
+        if endless:
             while True:
-                time.sleep(0.2)
-        except KeyboardInterrupt:
-            exit(0)
+                time.sleep(0.5)
+
+    except KeyboardInterrupt or SystemExit:
+        run_event.clear()
+        esp_discovery.join()
+        click.echo("Process terminated")
 
 
 def _collect_data(endless=True):
@@ -51,8 +67,9 @@ def _collect_data(endless=True):
     if endless:
         try:
             while True:
-                time.sleep(0.2)
+                time.sleep(0.5)
         except KeyboardInterrupt:
+            click.echo("Process terminated")
             exit(0)
 
 

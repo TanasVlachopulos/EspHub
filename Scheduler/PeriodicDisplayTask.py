@@ -32,7 +32,7 @@ class PeriodicDisplayTask(threading.Thread):
         :param task_json: 
         :return: 
         """
-        print("starting task")
+        # print("starting task")
         device_id = task_json.get('device_id')
         display_name = task_json.get('display_name')
 
@@ -79,7 +79,7 @@ class PeriodicDisplayTask(threading.Thread):
         # img.show()
 
         display_controller.draw_bitmap(img)
-        print(screen)
+        # print(screen)
 
     def _create_tasks(self):
         tasks_json = None
@@ -93,7 +93,7 @@ class PeriodicDisplayTask(threading.Thread):
 
         time_now = time.time()
         for task in tasks_json:  # create new scheduled task
-            print(task)
+            # print(task)
             schedule.every(task.get('interval', 1)).seconds.do(self._do_task, task)
 
     def run(self):
@@ -101,12 +101,12 @@ class PeriodicDisplayTask(threading.Thread):
         Every schedule_interval starts all pending tasks
         :return: 
         """
-        print("scheduled start")
+        print("scheduler start")
         self._create_tasks()
         # TODO detect changes in file and update tasks
         # schedule doc https://schedule.readthedocs.io/en/stable/faq.html#how-can-i-run-a-job-only-once
 
         while True:
-            print('.')
+            # print('.')
             schedule.run_pending()
             time.sleep(self.interval)
