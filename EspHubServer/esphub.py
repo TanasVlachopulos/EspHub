@@ -3,6 +3,7 @@ from Config import Config
 from DeviceCom import DataCollector as Collector
 from DeviceCom import EspDiscovery as Discovery
 from Scheduler import PeriodicDisplayTask
+# from .. import run_django
 import django
 import os
 import sys
@@ -58,7 +59,9 @@ def _collect_data(endless=True):
 @click.group()
 def cli():
     """EspHub home automation server"""
-    sys.path.append('./WebUi')
+    # magic with system path
+    sys.path.append('..')
+    sys.path.append('/WebUi')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'WebUi.settings')
 
 
@@ -95,6 +98,7 @@ def start(discovery, collecting, address_port):
     task = PeriodicDisplayTask.PeriodicDisplayTask()
     task.start()
 
+    # run_django.run_django()
     django.setup()
     call_command('runserver', address_port, use_reloader=False)  # use_reloader=False prevent running start function twice
 
