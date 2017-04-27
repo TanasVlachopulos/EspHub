@@ -3,11 +3,11 @@ import configparser
 
 
 class Config(object):
-    config_path = 'conf.ini'
+    CONFIG_PATH = 'conf.ini'
 
     def __init__(self):
         self.config_parser = configparser.ConfigParser()
-        self.config_parser.read(Config.config_path)
+        self.config_parser.read(Config.CONFIG_PATH)
 
     def get_config(self):
         return self.config_parser

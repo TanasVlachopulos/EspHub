@@ -62,10 +62,17 @@ def cli():
 
 
 @cli.command()
-@click.option('--discovery/--no-discovery', default=True, help='Disable device discovery')
-@click.option('--collecting/--no-collecting', default=True, help='Disable collecting data from devices')
-def start(discovery, collecting):
-    """Start EspHub server with all functions"""
+@click.option('--discovery/--no-discovery', default=True, help='Device discovery function (default enable)')
+@click.option('--collecting/--no-collecting', default=True, help='Collecting data from devices (default enable)')
+@click.argument('address-port', default='', metavar='[ipaddr:port]')
+def start(discovery, collecting, address_port):
+    """
+    Start EspHub server with all functions
+    
+    \b
+    Arguments:
+        ipaddr:port     Optional port number, or ipaddr:port
+    """
     if discovery:
         _device_discovery(endless=False)
     else:
@@ -78,8 +85,13 @@ def start(discovery, collecting):
 
     click.echo("Start server")
 
+    # load default ip and port from config
+    if not address_port:
+        conf = Config.Config().get_config()
+        address_port = str.format('{}:{}', conf.get('main', 'ip'), conf.get('main', 'port'))
+
     django.setup()
-    call_command('runserver', use_reloader=False)  # use_reloader=False prevent running start function twice
+    call_command('runserver', address_port, use_reloader=False)  # use_reloader=False prevent running start function twice
 
 
 @cli.command('device-discovery')
@@ -97,6 +109,18 @@ def collect_data(endless):
     click.echo("start collecting data ...")
     _collect_data(endless)
 
+
+@cli.command('config')
+def config():
+    """Edit EspHub configuration"""
+    click.edit(filename=Config.Config().CONFIG_PATH)
+
+
+@cli.command('reset-config')
+def reset_config():
+    """Reset the settings to default"""
+    # TODO implement configuration reset
+    pass
 
 if __name__ == '__main__':
     cli()
