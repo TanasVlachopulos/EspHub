@@ -2,7 +2,7 @@
 
 ## Project structure
 
-**EspHubServer**
+**[EspHubServer](https://github.com/TanasVlachopulos/EspHubServer)**
 Control server, collect data, broadcast discovery and enable web interface.
 
 **EspHubLib**
