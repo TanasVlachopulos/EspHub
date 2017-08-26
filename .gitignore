@@ -5,3 +5,4 @@ DataAccess/__pycache__/*DataAccess/__pycache__/__init__.cpython-35.pyc
 venv/*
 /*.egg-info
 
+*.pyc

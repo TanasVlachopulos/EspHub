@@ -77,8 +77,8 @@ def _collect_data(endless=True):
 def cli():
     """EspHub home automation server"""
     # magic with system path
-    sys.path.append('..')
-    sys.path.append('/WebUi')
+    # sys.path.append('')
+    sys.path.append('/home/tanas/pracovni/SemProjekt/EspHubServer/WebUi')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'WebUi.settings')
 
 
@@ -112,8 +112,11 @@ def start(discovery, collecting, address_port):
         address_port = str.format('{}:{}', conf.get('main', 'ip'), conf.get('main', 'port'))
 
     # start task scheduler
-    task = PeriodicDisplayTask.PeriodicDisplayTask()
-    task.start()
+    try:
+        task = PeriodicDisplayTask.PeriodicDisplayTask()
+        task.start()
+    except KeyboardInterrupt or SystemExit:
+        exit(0)
 
     # run_django.run_django()
     django.setup()
