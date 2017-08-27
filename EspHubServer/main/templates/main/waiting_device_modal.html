@@ -1,0 +1,74 @@
+<!-- Modal Structure -->
+<div id="modal-{{ id }}" class="modal modal-fixed-footer">
+    <div class="modal-content">
+        <h5>Verify device {{ id }}</h5>
+        <br>
+
+        <div class="row">
+            <form class="col s12" action="{% url 'main:verify_device' id %}" method="post" id="form-{{ id }}">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="input-field col s12">
+                        <input value="{{ name }}" id="device-name-{{ id }}" name="device-name" type="text"
+                               class="validate"
+                               placeholder="Device name" aria-required="true" required>
+                        <label for="device-name-{{ id }}" data-error="Can't be empty">Device name</label>
+                    </div>
+                </div>
+                <input id="input-{{ id }}" type="hidden" name="remove-device" value="false">
+                {% for ability in abilities %}
+                    <div class="row">
+                        <div class="input-field col s12 m8 l3">
+                            <input id="user-name-{{ id }}-{{ forloop.counter0 }}" value="{{ ability|capfirst }}"
+                                   name="user-name-{{ ability }}"
+                                   placeholder="{{ ability|capfirst }}" type="text" class="validate"
+                                   aria-required="true"
+                                   required>
+                            <label for="user-name-{{ id }}-{{ forloop.counter0 }}" data-error="Can't be empty">Ability
+                                name</label>
+                        </div>
+                        <div class="input-field col s12 m4 l2">
+                            <input id="unit-{{ id }}-{{ forloop.counter0 }}" name="unit-{{ ability }}" type="text"
+                                   class="validate" placeholder="Unit">
+                            <label for="unit-{{ id }}-{{ forloop.counter0 }}">Value
+                                unit</label>
+                        </div>
+                        <div class="input-field col s12 m8 l4">
+                            <input id="desc-{{ id }}-{{ forloop.counter0 }}" name="desc-{{ ability }}" type="text"
+                                   class="validate">
+                            <label for="desc-{{ id }}-{{ forloop.counter0 }}">Description</label>
+                        </div>
+                        <div class="input-field col s12 m4 l3">
+                            <select id="category-{{ id }}-{{ forloop.counter0 }}" name="category-{{ ability }}">
+                                <optgroup label="Input">
+                                    {% for input in input_abilities %}
+                                        <option value="{{ input }}">{{ input|capfirst }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Output">
+                                    {% for output in output_abilities %}
+                                        <option value="{{ output }}">{{ output|capfirst }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            </select>
+                            <label for="category-{{ id }}-{{ forloop.counter0 }}">Category</label>
+                        </div>
+                    </div>
+                {% endfor %}
+            </form>
+        </div>
+
+    </div>
+
+    <div class="modal-footer">
+        <a class="modal-action waves-effect waves-green btn-flat "
+           onclick="saveDevice({{ id }}, {{ abilities|length }})">
+            <i class="material-icons right">done</i>
+            Add device
+        </a>
+        <a class="modal-action modal-close waves-effect waves-red btn-flat " onclick="removeDevice({{ id }})">
+            <i class="material-icons right">clear</i>
+            Ignore
+        </a>
+    </div>
+</div>
