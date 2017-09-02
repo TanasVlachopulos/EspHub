@@ -12,6 +12,10 @@ import sys
 import json
 import time
 import click
+import signal
+
+# Variable for PeriodicDisplay task, is global due to signal_handling
+task_to_stop = []
 
 
 class HackedRunserver(BaseRunserverCommand):
@@ -19,6 +23,16 @@ class HackedRunserver(BaseRunserverCommand):
         print('before runserver')
         super(HackedRunserver, self).inner_run(*args, **options)
         print('after runserver')
+
+
+def _exit_signal_handler(signal, frame):
+    print("Interrupt !!!")
+    for task in task_to_stop:
+        print('stopping task')
+        task.stop()
+
+    # raise keyboard interrupt again for stopping Django webserver
+    raise KeyboardInterrupt
 
 
 def _device_discovery(endless=True):
@@ -96,6 +110,9 @@ def start(discovery, collecting, web_app_only, address_port):
     Arguments:
         ipaddr:port     Optional port number, or ipaddr:port
     """
+    # handle interrupt signal when user press ctrl+c
+    signal.signal(signal.SIGINT, _exit_signal_handler)
+
     # start collecting data
     if collecting and not web_app_only:
         _collect_data(endless=False)
@@ -116,6 +133,7 @@ def start(discovery, collecting, web_app_only, address_port):
     # start task scheduler
     task = PeriodicDisplayTask.PeriodicDisplayTask()
     task.start()
+    task_to_stop.append(task)
 
     # run_django.run_django()
     django.setup()

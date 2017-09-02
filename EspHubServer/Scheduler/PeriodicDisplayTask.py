@@ -18,6 +18,7 @@ class PeriodicDisplayTask(threading.Thread):
             >> [DisplayController] convert image to line format >> [DisplayController] transmit via MQTT
         """
         threading.Thread.__init__(self)
+        self._stop_event = threading.Event()
         self.conf = Config.Config().get_config()
         self.schedule_file_name = self.conf.get('scheduler', 'task_file')
         self.interval = self.conf.getint('scheduler', 'schedule_interval')
@@ -96,6 +97,11 @@ class PeriodicDisplayTask(threading.Thread):
             # print(task)
             schedule.every(task.get('interval', 1)).seconds.do(self._do_task, task)
 
+    def stop(self):
+        print('Stopping DisplayTask thread.')
+        schedule.clear()
+        self._stop_event.set()
+
     def run(self):
         """
         Every schedule_interval starts all pending tasks
@@ -106,7 +112,9 @@ class PeriodicDisplayTask(threading.Thread):
         # TODO detect changes in file and update tasks
         # schedule doc https://schedule.readthedocs.io/en/stable/faq.html#how-can-i-run-a-job-only-once
 
-        while True:
+        # loop while schedule queue is not empty
+        # next_run return date of next run, when user press ctrl+c stop method clear queue and loop end
+        while schedule.next_run():
             # print('.')
             schedule.run_pending()
             time.sleep(self.interval)
