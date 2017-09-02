@@ -85,8 +85,10 @@ def cli():
 @cli.command()
 @click.option('--discovery/--no-discovery', default=True, help='Device discovery function (default enable)')
 @click.option('--collecting/--no-collecting', default=True, help='Collecting data from devices (default enable)')
+@click.option('--web-app-only/--full-app', default=False,
+              help='Run only web interface without other functions (default disabled)')
 @click.argument('address-port', default='', metavar='[ipaddr:port]')
-def start(discovery, collecting, address_port):
+def start(discovery, collecting, web_app_only, address_port):
     """
     Start EspHub server with all functions
     
@@ -95,13 +97,13 @@ def start(discovery, collecting, address_port):
         ipaddr:port     Optional port number, or ipaddr:port
     """
     # start collecting data
-    if collecting:
+    if collecting and not web_app_only:
         _collect_data(endless=False)
     else:
         click.echo("collecting disabled")
 
     # start discovery protocol
-    if discovery:
+    if discovery and not web_app_only:
         _device_discovery(endless=False)
     else:
         click.echo("discovery disabled")
@@ -117,7 +119,8 @@ def start(discovery, collecting, address_port):
 
     # run_django.run_django()
     django.setup()
-    call_command('runserver', address_port, use_reloader=False)  # use_reloader=False prevent running start function twice
+    call_command('runserver', address_port,
+                 use_reloader=False)  # use_reloader=False prevent running start function twice
 
 
 @cli.command('device-discovery')
@@ -147,6 +150,7 @@ def reset_config():
     """Reset the settings to default"""
     # TODO implement configuration reset
     pass
+
 
 if __name__ == '__main__':
     cli()
