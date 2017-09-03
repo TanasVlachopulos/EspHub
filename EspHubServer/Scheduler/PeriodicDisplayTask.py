@@ -114,7 +114,7 @@ class PeriodicDisplayTask(threading.Thread):
 
         # loop while schedule queue is not empty
         # next_run return date of next run, when user press ctrl+c stop method clear queue and loop end
-        while schedule.next_run():
+        while schedule.next_run() and not self._stop_event.is_set():
             # print('.')
             schedule.run_pending()
             time.sleep(self.interval)

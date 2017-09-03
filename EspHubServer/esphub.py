@@ -28,7 +28,6 @@ class HackedRunserver(BaseRunserverCommand):
 def _exit_signal_handler(signal, frame):
     print("Interrupt !!!")
     for task in task_to_stop:
-        print('stopping task')
         task.stop()
 
     # raise keyboard interrupt again for stopping Django webserver
@@ -47,25 +46,16 @@ def _device_discovery(endless=True):
                       "ip": conf.get('mqtt', 'ip'),
                       "port": conf.getint('mqtt', 'port')})
 
-    run_event = threading.Event()
-    run_event.set()
-
     esp_discovery = Discovery.EspDiscovery(conf.get('discovery', 'broadcast'),
                                            conf.getint('discovery', 'port'),
                                            msg,
-                                           conf.getint('discovery', 'interval'),
-                                           run_event)
-    try:
-        esp_discovery.start()
+                                           conf.getint('discovery', 'interval'),)
+    esp_discovery.start()
+    task_to_stop.append(esp_discovery)
 
-        if endless:
-            while True:
-                time.sleep(0.5)
-
-    except KeyboardInterrupt or SystemExit:
-        run_event.clear()
-        esp_discovery.join()
-        click.echo("Process terminated")
+    if endless:
+        while True:
+            time.sleep(0.5)
 
 
 def _collect_data(endless=True):
