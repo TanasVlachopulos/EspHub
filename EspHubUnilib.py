@@ -5,11 +5,17 @@ import socket
 import json
 import logging
 import uuid
+import time
 
 
 class Log(object):
 	logger = None
+
 	def __init__(self):
+		"""
+		Init logger to console and file in library home directory.
+		Log has should have only one instance, so call get_logger method instead of constructor.
+		"""
 		path = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'esp_hub_unilib.log')
 		log = logging.getLogger("EspHubUnilib")
 		log.setLevel(logging.DEBUG)
@@ -30,6 +36,7 @@ class Log(object):
 			return Log.logger
 		else:
 			return Log.logger
+
 
 class Config(object):
 	CONFIG_PATH = 'conf.ini'
@@ -134,16 +141,20 @@ class MqttHandler(object):
 
 class EspHubUnilib(object):
 	_MAIN_TOPIC = "esp_hub/device/"
+	_HELLO_TOPIC = "hello"
 	_DATA_TOPIC = "data"
 	_TELEMETRY_TOPIC = "telemetry"
 	_CMD_TOPIC = "cmd"
+	_ACCEPT_TOPIC = 'accept'
 	_SETTING_DIR = '.esp_hub_unilib'
+	DISCOVERY_PORT = 11114
 
-	def __init__(self, device_id=None):
+	def __init__(self, name="", device_id=None):
 		self._abilities = []
 		self.log = Log.get_logger()
+		self.name = name
 		self.id = device_id if device_id else self._get_device_id()
-
+		self.waiting_for_hello_response = False  # indicate if hello message has been sent to server and client wait for hello response
 
 		broker_info = self._get_broker_config()
 		if broker_info:
@@ -236,16 +247,59 @@ class EspHubUnilib(object):
 		:param timeout: Max time for response waiting in seconds.
 		:return:
 		"""
-		pass
+		broadcast_ip = ''
+		udp_port = EspHubUnilib.DISCOVERY_PORT
+
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		sock.settimeout(timeout)
+		sock.bind((broadcast_ip, udp_port))
+
+		final_time = time.time() + timeout
+
+		while (final_time - time.time()) > 0:
+			try:
+				data, addr = sock.recvfrom(1024)
+				incoming_data = json.loads(data)
+				self.log.debug("Receiving UDP message from {}.".format(addr))
+				if not self.waiting_for_hello_response:
+					self.check_server(incoming_data.get('ip'), incoming_data.get('port'))
+			except socket.timeout:
+				self.log.error("Server discovery timeout.")
+			except json.JSONDecodeError:
+				self.log.warning("UDP discover message invalid format.")
 
 	def check_server(self, ip, port):
-		pass
+		"""
+		Check if server candidate from UDP discovery msg is valid MQTT server
+		:param ip: Server ip or hostname.
+		:param port: Server port.
+		"""
+		client = MqttHandler(ip, port, client_id=self.id)
+		if client.is_connected:
+			self.log.debug("Successfully connected to server candidate.")
+			client.register_topic("{}{}/{}".format(EspHubUnilib._MAIN_TOPIC, self.id, EspHubUnilib._ACCEPT_TOPIC),
+								  self.check_server_callback)
+			self.mqtt_client = client
+			self._generate_hello_msg()
+		else:
+			self.log.error("Cannot connect to server candidate.")
 
-	def check_server_callback(self):
-		pass
+	def check_server_callback(self, client, userdata, msg):
+		# TODO implement reaction to callback
+		# TODO validate recieved data with server candidate
+		# TODO save data to config
+		self.log.info("Receiving hello message.")
 
 	def _generate_hello_msg(self):
-		pass
+		"""
+		Send hello message to server candidate
+		"""
+		msg = {'name': self.name,
+			   'id': self.id,
+			   'ability': self._abilities}
+		self.log.info("Sending hello message to server candidate.")
+		self.mqtt_client.publish("{}{}".format(EspHubUnilib._MAIN_TOPIC, EspHubUnilib._HELLO_TOPIC), json.dumps(msg))
+		self.waiting_for_hello_response = True
 
 	def send_telemetry_data(self):
 		"""
@@ -260,5 +314,4 @@ class EspHubUnilib(object):
 if __name__ == "__main__":
 	lib = EspHubUnilib()
 	lib.abilities = ['test']
-	lib.send_data('test', 'asd')
-
+	lib.server_discovery()
