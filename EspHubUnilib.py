@@ -7,19 +7,29 @@ import logging
 import uuid
 
 
-def _get_logger(path):
-	log = logging.getLogger("EspHubUnilib")
-	log.setLevel(logging.DEBUG)
-	lh = logging.FileHandler(path)
-	ch = logging.StreamHandler()
-	ch.setLevel(logging.DEBUG)
-	ch.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
-	log.addHandler(ch)
-	lh.setLevel(logging.DEBUG)
-	lh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
-	log.addHandler(lh)
-	return log
+class Log(object):
+	logger = None
+	def __init__(self):
+		path = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'esp_hub_unilib.log')
+		log = logging.getLogger("EspHubUnilib")
+		log.setLevel(logging.DEBUG)
+		lh = logging.FileHandler(path)
+		ch = logging.StreamHandler()
+		ch.setLevel(logging.DEBUG)
+		ch.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
+		log.addHandler(ch)
+		lh.setLevel(logging.DEBUG)
+		lh.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s'))
+		log.addHandler(lh)
+		Log.logger = log
 
+	@staticmethod
+	def get_logger():
+		if not Log.logger:
+			Log()
+			return Log.logger
+		else:
+			return Log.logger
 
 class Config(object):
 	CONFIG_PATH = 'conf.ini'
@@ -28,13 +38,17 @@ class Config(object):
 		self.config_parser = configparser.ConfigParser()
 		if not os.path.exists(setting_dir):
 			os.makedirs(setting_dir)
-		path = os.path.join(setting_dir, Config.CONFIG_PATH)
-		if not os.path.isfile(path):
-			open(path, 'w').close()
-		self.config_parser.read(path)
+		self.path = os.path.join(setting_dir, Config.CONFIG_PATH)
+		if not os.path.isfile(self.path):
+			open(self.path, 'w').close()
+		self.config_parser.read(self.path)
 
 	def get_config(self):
 		return self.config_parser
+
+	def write_config(self, config):
+		with open(self.path, 'w') as file:
+			config.write(file)
 
 	def __str__(self):
 		return str(self.config_parser.sections())
@@ -57,7 +71,7 @@ class MqttHandler(object):
 		self.client = None
 		self.client_id = client_id
 		self.is_connected = False
-		self.log = _get_logger(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'esp_hub_unilib.log'))
+		self.log = Log.get_logger()
 
 		try:
 			self._connect(client_id, username, password)
@@ -127,10 +141,25 @@ class EspHubUnilib(object):
 
 	def __init__(self, device_id=None):
 		self._abilities = []
-		self.log = _get_logger(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'esp_hub_unilib.log'))
+		self.log = Log.get_logger()
 		self.id = device_id if device_id else self._get_device_id()
-		self.mqtt_client = None
-		self.config = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)).get_config()
+
+
+		broker_info = self._get_broker_config()
+		if broker_info:
+			self.mqtt_client = MqttHandler(broker_info.get('address'), broker_info.get('port'))
+		else:
+			# TODO start server discovery
+			pass
+
+	def _get_broker_config(self):
+		config = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)).get_config()
+		try:
+			return {'address': config.get('broker', 'address'),
+					'port': config.getint('broker', 'port')}
+		except configparser.NoSectionError or configparser.NoOptionError:
+			self.log.info("No broker section in config file found.")
+			return None
 
 	def _get_device_id(self):
 		"""
@@ -181,10 +210,11 @@ class EspHubUnilib(object):
 			msg = {"type": ability,
 				   "value": value,
 				   "dvalue": 0}
-			self.log.info("Sending data {}".format(ability))
+			self.log.debug("Sending data {}".format(ability))
 			self.send_json(EspHubUnilib._DATA_TOPIC, json.dumps(msg))
 		else:
 			# TODO raise exception not registered ability
+			self.log.error("Cannot send not registered ability.")
 			pass
 
 	def send_json(self, topic_part, json_str):
@@ -197,7 +227,7 @@ class EspHubUnilib(object):
 		:return:
 		"""
 		if self.mqtt_client:
-			topic = "{}{}{}".format(EspHubUnilib._MAIN_TOPIC, self.id, topic_part)
+			topic = "{}{}/{}".format(EspHubUnilib._MAIN_TOPIC, self.id, topic_part)
 			self.mqtt_client.publish(topic, json_str)
 
 	def server_discovery(self, timeout=60):
@@ -228,4 +258,7 @@ class EspHubUnilib(object):
 
 
 if __name__ == "__main__":
-	EspHubUnilib()
+	lib = EspHubUnilib()
+	lib.abilities = ['test']
+	lib.send_data('test', 'asd')
+
