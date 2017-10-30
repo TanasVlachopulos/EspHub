@@ -155,6 +155,7 @@ class EspHubUnilib(object):
 		self.name = name
 		self.id = device_id if device_id else self._get_device_id()
 		self.waiting_for_hello_response = False  # indicate if hello message has been sent to server and client wait for hello response
+		self.server_candidate = None  # candidate for future server received from UDP discovery
 
 		broker_info = self._get_broker_config()
 		if broker_info:
@@ -280,11 +281,22 @@ class EspHubUnilib(object):
 			client.register_topic("{}{}/{}".format(EspHubUnilib._MAIN_TOPIC, self.id, EspHubUnilib._ACCEPT_TOPIC),
 								  self.check_server_callback)
 			self.mqtt_client = client
+			self.server_candidate = {'ip': ip, 'port': port}
 			self._generate_hello_msg()
 		else:
 			self.log.error("Cannot connect to server candidate.")
 
 	def check_server_callback(self, client, userdata, msg):
+		try:
+			server_reply = json.loads(msg.payload.decode("utf-8"))
+			self.log.debug("Hello reply: {}".format(server_reply))
+
+			if self.server_candidate == server_reply:
+				self.log.info("Server candidate validated.")
+				self._write_server_to_config(server_reply.get('ip'), server_reply.get('port'))
+		except json.JSONDecodeError:
+			self.log.error("Cannot parse hello reply.")
+
 		# TODO implement reaction to callback
 		# TODO validate recieved data with server candidate
 		# TODO save data to config
@@ -309,6 +321,15 @@ class EspHubUnilib(object):
 		local_ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")]
 					 or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in
 						  [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]))[0]
+
+	def _write_server_to_config(self, ip, port):
+		config_handler = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR))
+		config = config_handler.get_config()
+		if not 'broker' in config:
+			config.add_section('broker')
+		config.set('broker', 'ip', ip)
+		config.set('broker', 'port', str(port))
+		config_handler.write_config(config)
 
 
 if __name__ == "__main__":
