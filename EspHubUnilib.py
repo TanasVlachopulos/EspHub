@@ -156,21 +156,26 @@ class EspHubUnilib(object):
 		self.id = device_id if device_id else self._get_device_id()
 		self.waiting_for_hello_response = False  # indicate if hello message has been sent to server and client wait for hello response
 		self.server_candidate = None  # candidate for future server received from UDP discovery
+		self.validated = False
 
 		broker_info = self._get_broker_config()
 		if broker_info:
-			self.mqtt_client = MqttHandler(broker_info.get('address'), broker_info.get('port'))
+			# self.mqtt_client = MqttHandler(broker_info.get('address'), broker_info.get('port'))
+			self.check_server(broker_info.get('address'), broker_info.get('port'))
 		else:
 			# TODO start server discovery
-			pass
+			self.server_discovery()
 
 	def _get_broker_config(self):
 		config = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)).get_config()
 		try:
 			return {'address': config.get('broker', 'address'),
 					'port': config.getint('broker', 'port')}
-		except configparser.NoSectionError or configparser.NoOptionError:
+		except configparser.NoSectionError:
 			self.log.info("No broker section in config file found.")
+			return None
+		except configparser.NoOptionError:
+			self.log.info("Config file missing some sections.")
 			return None
 
 	def _get_device_id(self):
@@ -257,7 +262,8 @@ class EspHubUnilib(object):
 
 		final_time = time.time() + timeout
 
-		while (final_time - time.time()) > 0:
+		# TODO implement this as select - fix issue when loop waiting for udp packet even if server is already validated
+		while (final_time - time.time()) > 0 and not self.validated:
 			try:
 				data, addr = sock.recvfrom(1024)
 				incoming_data = json.loads(data)
@@ -294,12 +300,11 @@ class EspHubUnilib(object):
 			if self.server_candidate == server_reply:
 				self.log.info("Server candidate validated.")
 				self._write_server_to_config(server_reply.get('ip'), server_reply.get('port'))
+				self.validated = True
+
 		except json.JSONDecodeError:
 			self.log.error("Cannot parse hello reply.")
 
-		# TODO implement reaction to callback
-		# TODO validate recieved data with server candidate
-		# TODO save data to config
 		self.log.info("Receiving hello message.")
 
 	def _generate_hello_msg(self):
@@ -333,6 +338,6 @@ class EspHubUnilib(object):
 
 
 if __name__ == "__main__":
-	lib = EspHubUnilib()
+	lib = EspHubUnilib('test device')
 	lib.abilities = ['test']
-	lib.server_discovery()
+	# lib.server_discovery()
