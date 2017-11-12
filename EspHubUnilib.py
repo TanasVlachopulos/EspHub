@@ -1,5 +1,7 @@
 import configparser
 import os
+import threading
+
 import paho.mqtt.client as mqtt
 import socket
 import json
@@ -150,27 +152,37 @@ class EspHubUnilib(object):
 	DISCOVERY_PORT = 11114
 
 	def __init__(self, name="", device_id=None):
-		self._abilities = []
 		self.log = Log.get_logger()
-		self.name = name
+		self.config = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)).get_config()
+
 		self.id = device_id if device_id else self._get_device_id()
-		self.waiting_for_hello_response = False  # indicate if hello message has been sent to server and client wait for hello response
+		self.name = name
+
+		self._abilities = []
+		# indicate if hello message has been sent to server and client wait for hello response
+		self.waiting_for_hello_response = threading.Event()
 		self.server_candidate = None  # candidate for future server received from UDP discovery
 		self.validated = False
 
 		broker_info = self._get_broker_config()
-		if broker_info:
-			# self.mqtt_client = MqttHandler(broker_info.get('address'), broker_info.get('port'))
-			self.check_server(broker_info.get('address'), broker_info.get('port'))
+		# try to connect with config values
+		if broker_info and self.check_server(broker_info.get('address'), broker_info.get('port')):
+			validation_interval = self.config.get('general', 'accept-timeout', fallback=20)
+			self.log.info("Using config values for connection: server={}, port={}".format(broker_info.get('address'), broker_info.get('port')))
+
+			# wait for server accept msg
+			if self.waiting_for_hello_response.wait(timeout=validation_interval):
+				self.log.info("Server {} has been validated.".format(broker_info.get('address')))
+				self.waiting_for_hello_response.clear()
+			else:
+				self.log.error("Server {} has not been validate in given time {} seconds.".format(broker_info.get('address'), validation_interval))
 		else:
-			# TODO start server discovery
 			self.server_discovery()
 
 	def _get_broker_config(self):
-		config = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)).get_config()
 		try:
-			return {'address': config.get('broker', 'address'),
-					'port': config.getint('broker', 'port')}
+			return {'address': self.config.get('broker', 'address'),
+					'port': self.config.getint('broker', 'port')}
 		except configparser.NoSectionError:
 			self.log.info("No broker section in config file found.")
 			return None
@@ -268,10 +280,22 @@ class EspHubUnilib(object):
 				data, addr = sock.recvfrom(1024)
 				incoming_data = json.loads(data)
 				self.log.debug("Receiving UDP message from {}.".format(addr))
-				if not self.waiting_for_hello_response:
-					self.check_server(incoming_data.get('ip'), incoming_data.get('port'))
+
+				# try to use server from incoming message
+				if self.check_server(incoming_data.get('ip'), incoming_data.get('port')):
+					validation_interval = self.config.get('general', 'accept-timeout', fallback=20)
+
+					# wait for hello response
+					if self.waiting_for_hello_response.wait(timeout=validation_interval):
+						self.log.info("Server {} has been validated.".format(incoming_data.get('ip')))
+						self.waiting_for_hello_response.clear()
+						break
+					else:
+						self.log.error("Server {} has not been validate in given time {} seconds.".format(incoming_data.get('ip'), validation_interval))
+
 			except socket.timeout:
 				self.log.error("Server discovery timeout.")
+				break
 			except json.JSONDecodeError:
 				self.log.warning("UDP discover message invalid format.")
 
@@ -280,6 +304,7 @@ class EspHubUnilib(object):
 		Check if server candidate from UDP discovery msg is valid MQTT server
 		:param ip: Server ip or hostname.
 		:param port: Server port.
+		:return true/false
 		"""
 		client = MqttHandler(ip, port, client_id=self.id)
 		if client.is_connected:
@@ -289,18 +314,25 @@ class EspHubUnilib(object):
 			self.mqtt_client = client
 			self.server_candidate = {'ip': ip, 'port': port}
 			self._generate_hello_msg()
+			return True
 		else:
 			self.log.error("Cannot connect to server candidate.")
+			return False
 
 	def check_server_callback(self, client, userdata, msg):
+		"""
+		Handler Accept message (response to Hello message) from server
+		"""
 		try:
 			server_reply = json.loads(msg.payload.decode("utf-8"))
 			self.log.debug("Hello reply: {}".format(server_reply))
 
+			# compare server candidate against hello message
 			if self.server_candidate == server_reply:
 				self.log.info("Server candidate validated.")
 				self._write_server_to_config(server_reply.get('ip'), server_reply.get('port'))
 				self.validated = True
+				self.waiting_for_hello_response.set()
 
 		except json.JSONDecodeError:
 			self.log.error("Cannot parse hello reply.")
@@ -316,7 +348,6 @@ class EspHubUnilib(object):
 			   'ability': self._abilities}
 		self.log.info("Sending hello message to server candidate.")
 		self.mqtt_client.publish("{}{}".format(EspHubUnilib._MAIN_TOPIC, EspHubUnilib._HELLO_TOPIC), json.dumps(msg))
-		self.waiting_for_hello_response = True
 
 	def send_telemetry_data(self):
 		"""
@@ -340,4 +371,4 @@ class EspHubUnilib(object):
 if __name__ == "__main__":
 	lib = EspHubUnilib('test device')
 	lib.abilities = ['test']
-	# lib.server_discovery()
+# lib.server_discovery()
