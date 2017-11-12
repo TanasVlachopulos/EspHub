@@ -242,9 +242,8 @@ class EspHubUnilib(object):
 			self.log.debug("Sending data {}".format(ability))
 			self.send_json(EspHubUnilib._DATA_TOPIC, json.dumps(msg))
 		else:
-			# TODO raise exception not registered ability
 			self.log.error("Cannot send not registered ability.")
-			pass
+			raise ValueError("Cannot send not registered ability.")
 
 	def send_json(self, topic_part, json_str):
 		"""
@@ -257,7 +256,8 @@ class EspHubUnilib(object):
 		"""
 		if self.mqtt_client:
 			topic = "{}{}/{}".format(EspHubUnilib._MAIN_TOPIC, self.id, topic_part)
-			self.mqtt_client.publish(topic, json_str)
+			if not self.mqtt_client.publish(topic, json_str):
+				raise ConnectionError("Cannot publish message, MQTT client is disconnected.")
 
 	def server_discovery(self, timeout=60):
 		"""
@@ -371,4 +371,3 @@ class EspHubUnilib(object):
 if __name__ == "__main__":
 	lib = EspHubUnilib('test device')
 	lib.abilities = ['test']
-# lib.server_discovery()
