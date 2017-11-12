@@ -332,7 +332,7 @@ class EspHubUnilib(object):
 		config = config_handler.get_config()
 		if not 'broker' in config:
 			config.add_section('broker')
-		config.set('broker', 'ip', ip)
+		config.set('broker', 'address', ip)
 		config.set('broker', 'port', str(port))
 		config_handler.write_config(config)
 
