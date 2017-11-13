@@ -151,9 +151,9 @@ class EspHubUnilib(object):
 	_SETTING_DIR = '.esp_hub_unilib'
 	DISCOVERY_PORT = 11114
 
-	def __init__(self, name="", device_id=None):
+	def __init__(self, name="", device_id=None, config_path=None):
 		self.log = Log.get_logger()
-		self.config = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)).get_config()
+		self.config = Config(os.path.abspath(config_path)) if config_path else Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)).get_config()
 
 		self.id = device_id if device_id else self._get_device_id()
 		self.name = name
@@ -167,7 +167,7 @@ class EspHubUnilib(object):
 		broker_info = self._get_broker_config()
 		# try to connect with config values
 		if broker_info and self.check_server(broker_info.get('address'), broker_info.get('port')):
-			validation_interval = self.config.get('general', 'accept-timeout', fallback=20)
+			validation_interval = self.config.getint('general', 'accept-timeout', fallback=20)
 			self.log.info("Using config values for connection: server={}, port={}".format(broker_info.get('address'), broker_info.get('port')))
 
 			# wait for server accept msg
@@ -269,21 +269,28 @@ class EspHubUnilib(object):
 		udp_port = EspHubUnilib.DISCOVERY_PORT
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		sock.settimeout(timeout)
+		# sock.settimeout(timeout)
 		sock.bind((broadcast_ip, udp_port))
 
 		final_time = time.time() + timeout
 
-		# TODO implement this as select - fix issue when loop waiting for udp packet even if server is already validated
-		while (final_time - time.time()) > 0 and not self.validated:
+		# TODO fix bug with argument in on disconnect callback - see issue #22
+		self.log.info("Start server discovery.")
+		while not self.validated:
 			try:
+				left_time = final_time - time.time()
+				if left_time > 0:
+					sock.settimeout(left_time)
+				else:
+					self.log.error("Server discovery timeout.")
+					break
 				data, addr = sock.recvfrom(1024)
 				incoming_data = json.loads(data)
 				self.log.debug("Receiving UDP message from {}.".format(addr))
 
 				# try to use server from incoming message
 				if self.check_server(incoming_data.get('ip'), incoming_data.get('port')):
-					validation_interval = self.config.get('general', 'accept-timeout', fallback=20)
+					validation_interval = self.config.getint('general', 'accept-timeout', fallback=20)
 
 					# wait for hello response
 					if self.waiting_for_hello_response.wait(timeout=validation_interval):
