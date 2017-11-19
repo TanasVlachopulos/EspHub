@@ -1,22 +1,22 @@
 """
 Handle incoming messages form ESP devices and sending data to Db layer
 """
-from datetime import datetime
-import json
-from DataAccess import DAO, DAC
+from DataAccess import DAO, DAC, DBA
 from DeviceCom.MessageHandler import MessageHandler
 from Config.Config import Config
+from Tools.Log import Log
+import json
 
 conf = Config.get_config()
+log = Log.get_logger()
 
 
 class DataCollector(object):
-	def __init__(self, database_path, config_file=None):
-		# self.db = DBA.Dba(conf.get('db', 'path'))
+	def __init__(self):
+
 		self.topics = {"esp_hub/device/hello": self.new_device_callback,
 					   "esp_hub/device/+/telemetry": self.telemetry_callback,
 					   "esp_hub/device/+/data": self.data_callback}
-		# TODO replace with config
 
 		self.mqtt = MessageHandler(conf.get('mqtt', 'ip'), conf.getint('mqtt', 'port'))
 		self.mqtt.register_topics(self.topics)
@@ -40,32 +40,77 @@ class DataCollector(object):
 		part = [i for i in msg.topic.split('/')]
 		return part[part.index("device") + 1]
 
+	@staticmethod
+	def verify_json(json_string):
+		"""
+		Verify if given string is JSON serializable.
+		:param json_string: String for verification.
+		:return: True/False
+		"""
+		try:
+			json.loads(json_string)
+			return True
+		except json.JSONDecodeError:
+			return False
+
+	@staticmethod
+	def normalize_ability_message(message):
+		"""
+		Try to normalize abilities message from device if this message is in invalid (not JSON serializable) format.
+		:param message: Ability message from device.
+		:type message: str
+		:return: Normalized message.
+		"""
+		message = message.replace('[', '')
+		message = message.replace(']', '')
+		message = message.replace(';', ',')
+		message = message.replace(' ', '')
+		message = message.replace('"', '')
+		message = message.replace("'", '')
+		message = message.split(',')
+		return message
+
 	def new_device_callback(self, client, userdata, msg):
 		"""
-		Handle Hello msg from devices
+		Handle Hello msg from devices.
 		Topic: esp_hub/device/hello
 		"""
 		data = self.extract_payload(msg)
-		print(data.get('name'), data.get('id'))
+		log.info("Receiving hello message from device: '{}', with ID: '{}'".format(data.get('name'), data.get('id')))
 
-		# device is in database
-		if self.db.get_device(data['id']):
-			reply = {"ip": conf.get('mqtt', 'ip'), "port": conf.getint('mqtt', 'port')}
-			self.mqtt.publish(str.format("esp_hub/device/{}/accept", data['id']), json.dumps(reply))
-		# TODO load MQTT strings from config file
-		else:
-			provided_func = data['ability']
-			provided_func = provided_func.replace('[', '')
-			provided_func = provided_func.replace(']', '')
-			provided_func = provided_func.replace(';', ',')
-			provided_func = provided_func.replace(' ', '')
-			provided_func = provided_func.replace('"', '')
-			provided_func = provided_func.replace("'", '')
-			provided_func = provided_func.split(',')
-			# add device to waiting device list
-			self.db.add_waiting_device(DAO.Device(data['id'], data['name'], provided_func))
-			print(self.db)
-		# self.verify_device(data['id'], data['name'], data['ability'])
+		with DAC.keep_session() as db:
+			device = DBA.get_device(db, data.get('id'))
+			if device and device.status == DAO.Device.VALIDATED:
+				# device is in database and is validated
+				log.info("Device {} is already validated. Sending Hello message.".format(device.name))
+				reply = {'ip': conf.get('mqtt', 'ip'),
+						 'port': conf.get('mqtt', 'port')}
+
+				self.mqtt.publish("esp_hub/device/{}/accept".format(device.id), json.dumps(reply))
+
+			elif device and device.status == DAO.Device.WAITING:
+				# device is in database and waiting for validation
+				log.info("Device {} is already in database and waiting for validation.".format(device.name))
+
+			elif not device:
+				# device is not in database
+				log.info("Device {} is not in database. Creating new device notification for user. Adding device into waiting devices.".format(data.get('id')))
+
+				# check if information about abilities are in JSON serializable format
+				abilities = None
+				if self.verify_json(data.get('ability')):
+					abilities = json.loads(data.get('ability'))
+				else:
+					log.warning("Abilities received from device {} are in invalid format.".format(data.get('name')))
+					try:
+						abilities = json.loads(self.normalize_ability_message(data.get('ability')))
+					except json.JSONDecodeError:
+						log.exception("Cannot parse abilities provided from device {}.".format(data.get('name')))
+
+				# add device to waiting list
+				if abilities:
+					new_device = DAO.Device(id=data.get('id'), name=data.get('name'), provided_func=abilities)
+					DBA.add_waiting_device(db, new_device)
 
 	def telemetry_callback(self, client, userdata, msg):
 		"""
@@ -75,11 +120,24 @@ class DataCollector(object):
 		data = self.extract_payload(msg)
 		device_id = self.extract_device_id(msg)
 
-		print(data)
-		telemetry = DAO.Telemetry(device_id, datetime.now(), rssi=data.get('rssi', '0'), heap=data.get('heap', '0'),
-								  cycles=data.get('cycles', '0'), ip=data.get('local_ip', '0'), mac=data.get('mac', '0'),
-								  voltage=data.get('voltage', '0'), ssid=data.get('ssid', '0'))
-		self.db.insert_telemetry(telemetry)
+		log.info("Receiving telemetry message from device with ID: '{}'".format(device_id))
+
+		with DAC.keep_session() as db:
+			device = DBA.get_device(db, device_id)
+			if device and device.status == DAO.Device.VALIDATED:
+				telemetry = DAO.Telemetry(device=device,
+										  device_id=device.id,
+										  rssi=data.get('rssi'),
+										  heap=data.get('heap'),
+										  cycles=data.get('cycles'),
+										  ip=data.get('local_ip'),
+										  mac=data.get('mac'),
+										  voltage=data.get('voltage'),
+										  ssid=data.get('ssid'),
+										  hostname=data.get('hostname'))
+				DBA.insert_telemetry(db, telemetry)
+			else:
+				log.warning("Device with ID '{}' is not in database of validated devices. Cannot store telemetry.".format(device_id))
 
 	def data_callback(self, client, userdata, msg):
 		"""
@@ -87,27 +145,21 @@ class DataCollector(object):
 		Topic: esp_hub/device/+/data
 		"""
 		data = self.extract_payload(msg)
-		client_id = self.extract_device_id(msg)
+		device_id = self.extract_device_id(msg)
 
+		# check if message contain mandatory fields
 		if 'type' in data and 'value' in data:
-			record = DAO.Record(client_id, datetime.now(), data["type"], data["value"])
-			self.db.insert_record(record)
-			print(">>> ", data['type'], data['value'])
+			log.info("Data from '{}' >>> type: {}, value: {}".format(device_id, data.get('type'), data.get('value')))
 
-		# obsolete - verification process ensures web application and Data sender
-		# def verify_device(self, device_id, device_name, device_abilities):
-		#     """
-		#     Verifi device identitiy
-		#     Blocking operation which wait for user response
-		#     :param device_id:
-		#     :param device_name:
-		#     :param device_abilities:
-		#     :return:
-		#     """
-		#     confirm = input(str.format("Do you want to add new device {} (ID: {})? [Y/n] ", device_name, device_id))
-		#     if confirm.lower() == 'y' or confirm.lower() == 'yes':
-		#         new_device = DAO.Device(device_id, device_name, device_abilities)
-		#         self.db.insert_device(new_device)
-		#         print("Add new device")
-		#         reply = {"ip": "192.168.1.1", "port": 1883}
-		#         self.mqtt.publish(str.format("esp_hub/device/{}/accept", device_id), json.dumps(reply))
+			with DAC.keep_session() as db:
+				device = DBA.get_device(db, device_id)
+				# check if device is in database
+				if device and device.status == device.VALIDATED:
+					record = DAO.Record(device=device,
+										name=data.get('type'),
+										value=data.get('value'))
+					DBA.insert_record(db, record)
+				else:
+					log.warning("Device with ID '{}' is not in database of validated devices. Cannot store record.".format(device_id))
+		else:
+			log.error("Message from device with ID '{}' is in incomplete format.".format(device_id))
