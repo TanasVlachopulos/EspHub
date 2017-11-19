@@ -16,13 +16,17 @@ class Device(Base):
 	:type id: str
 	:param name: Recognizable device name.
 	:type name: str
-	:param provided_func: List of provided function - list of strings (json serializable).
+	:param status: Device status: 'validated' when user validate device, 'waiting' waiting for validation
+	:type status: str
+	:param provided_func: List of provided function. Store original value from client device, so this parameter has purpose only before validation.
+		After validation provided functions in rich format are stored in Ability Table - list of strings (json serializable).
 	:type provided_func: list
 	"""
 	__tablename__ = 'device'
 
 	id = Column('id', String(64), primary_key=True, unique=True)
 	name = Column('name', String(64), nullable=False)
+	status = Column('status', String(16), default='validated')
 	provided_func = Column('provided_func', CustomJson, nullable=True)
 
 	def __repr__(self):
@@ -44,7 +48,7 @@ class Ability(Base):
 	:type category: str
 	:param unit: Ability unit - optional.
 	:type unit: str
-	:param default_value: Default value for sensors - optiona.
+	:param default_value: Default value for sensors - optional.
 	:type default_value: str
 	:param data_type: Indicate type of provided data (e.g. 'str', 'int', 'float', 'json') - default 'str'.
 	:type data_type: str
@@ -57,7 +61,7 @@ class Ability(Base):
 
 	id = Column('id', Integer, primary_key=True)
 	name = Column('name', String(256), nullable=False)
-	user_name = Column('userName', String(256), nullable=False)
+	user_name = Column('userName', String(256), nullable=True)
 	io = Column('io', String(16), nullable=True)
 	category = Column('category', String(32), nullable=True)
 	unit = Column('unit', String(16), nullable=True)
@@ -66,7 +70,7 @@ class Ability(Base):
 	description = Column('description', String, nullable=True)
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
-	device = relationship(Device)
+	device = relationship(Device, cascade='delete')
 
 	def __repr__(self):
 		return 'Ability: <{}>'.format((self.id, self.name, self.user_name, self.io, self.category, self.device_id))
@@ -176,4 +180,7 @@ class Display(Base):
 	params = Column('params', CustomJson, nullable=True)
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
-	device = relationship(Device)
+	device = relationship(Device, cascade='delete')
+
+	def __repr__(self):
+		return "Display <{}>".format((self.id, self.display_name, self.screen_name))
