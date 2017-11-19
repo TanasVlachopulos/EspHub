@@ -16,9 +16,9 @@ if __name__ == '__main__':
 			DBA.insert_record(dbs, DAO.Record(name='temp', value=str(i), device=dev, time=datetime.now()))
 			time.sleep(0.1)
 
-		for i in range(300, 310):
-			DBA.insert_record(dbs, DAO.Record(name='light', value=str(i), device=dev, time=datetime.now()))
-			time.sleep(0.1)
+		# for i in range(300, 310):
+		# 	DBA.insert_record(dbs, DAO.Record(name='light', value=str(i), device=dev, time=datetime.now()))
+		# 	time.sleep(0.1)
 
 		# ability = DAO.Ability(device=dev)
 		# print(ability)
@@ -28,13 +28,16 @@ if __name__ == '__main__':
 		# dbs.add(ability)
 		# print(ability.to_json())
 
-	with DAC.keep_session() as dbs:
+	# with DAC.keep_session() as dbs:
 		# dev = dbs.query(DAO.Device).filter(DAO.Device.id == 'dev1234').first()
 		# dev = DBA.get_device(dbs, 'dev1234')
 		# print(dev)
 		# DBA.remove_device(dbs, 'dev1234', cascade=False)
 		# dev.provided_func = ['temp', 'hum', 'light']
-		records = DBA.get_record_from_device(dbs, 'dev1234', value_type='temp', order='upscend', limit=5)
+		# records = DBA.get_record_from_device(dbs, 'dev1234', value_type='temp', order='upscend', limit=5)
+		# for record in records:
+		# 	print(record)
 
-		for record in records:
-			print(record)
+	from Config.Config import Config
+	conf = Config.get_config()
+	print(conf.getint('discovery', 'interval'))
