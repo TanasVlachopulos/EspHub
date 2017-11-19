@@ -7,6 +7,10 @@ class Config(object):
 	CONFIG_NAME = 'conf.ini'
 
 	def __init__(self, setting_dir=None):
+		"""
+		Initialize config. Do this only once in module __init__.py.
+		:param setting_dir: Path to config directory. If not set project root is used.
+		"""
 		config_parser = configparser.ConfigParser()
 
 		if setting_dir:
@@ -24,6 +28,10 @@ class Config(object):
 
 	@staticmethod
 	def get_config():
+		"""
+		Get configparser instance.
+		:return: Configparser instance.
+		"""
 		if not Config.config:
 			raise ValueError("Config is not initialized.")
 		else:

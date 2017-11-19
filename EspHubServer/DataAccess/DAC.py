@@ -3,10 +3,17 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from contextlib import contextmanager
 from Tools.Log import Log
+from Config.Config import Config
+from configparser import NoSectionError, NoOptionError
 
-# TODO replace database source with config
-engine = create_engine('sqlite:///esp_hub_db.sqlite3', convert_unicode=True)
-Session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+conf = Config.get_config()
+
+try:
+	engine = create_engine(conf.get('db', 'connection_string'), convert_unicode=True)
+	Session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+except (NoSectionError, NoOptionError):
+	log = Log.get_logger()
+	log.error("Missing config record 'connection_string' in section [db]. Cannot found path to database file.")
 
 Base = declarative_base()
 
@@ -29,6 +36,7 @@ def get_session():
 	:return: Session instance
 	"""
 	return Session()
+
 
 @contextmanager
 def keep_session():
