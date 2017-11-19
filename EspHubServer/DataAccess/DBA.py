@@ -26,7 +26,7 @@ def remove_waiting_device(session, device_id):
 	:type device_id: str
 	"""
 	# TODO reimplement this. Stare chovani bylo takove ze se objekt odstranil z tabulky waiting devices a vytvoril se novy do tabulky devices, tady by bylo lepsi jenom zmenit status.
-	pass
+	raise NotImplementedError
 
 
 def get_waiting_devices(session):
