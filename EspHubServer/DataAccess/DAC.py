@@ -13,7 +13,7 @@ try:
 	Session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 except (NoSectionError, NoOptionError):
 	log = Log.get_logger()
-	log.error("Missing config record 'connection_string' in section [db]. Cannot found path to database file.")
+	log.critical("Missing config record 'connection_string' in section [db]. Cannot found path to database file.")
 
 Base = declarative_base()
 
