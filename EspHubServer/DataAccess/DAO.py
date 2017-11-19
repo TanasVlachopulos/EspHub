@@ -23,6 +23,8 @@ class Device(Base):
 	:type provided_func: list
 	"""
 	__tablename__ = 'device'
+	VALIDATED = 'validated'
+	WAITING = 'waiting'
 
 	id = Column('id', String(64), primary_key=True, unique=True)
 	name = Column('name', String(64), nullable=False)
@@ -137,7 +139,26 @@ class Record(Base):
 
 class Telemetry(Base):
 	"""
-	Table represent incoming telemetry from device
+	Table represent incoming telemetry from device.
+	:param id: Unique record ID - automatically generated.
+	:type id: int
+	:param time: Time of creation - default is current time.
+	:type time: datetime
+	:param rssi: Signal RSSI for ESP device.
+	:type rssi: str
+	:param heap: Allocated space on heap for ESP device.
+	:type heap: str
+	:param cycles: Cycles from start for ESP device.
+	:type rssi: str
+	:param voltage: Voltage on ESP device.
+	:type rssi: str
+	:param ip: IP address of device.
+	:type rssi: str
+	:param mac: MAC address of device.
+	:type rssi: str
+	:param ssid: Wifi network SSID of ESP device.
+	:type rssi: str
+	:param hostname: Hostname of unilib device.
 	"""
 	__tablename__ = 'telemetry'
 
