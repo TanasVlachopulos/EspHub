@@ -1,5 +1,6 @@
 """
 Handle incoming messages form ESP devices and sending data to Db layer
+Refactored
 """
 from DataAccess import DAO, DAC, DBA
 from DeviceCom.MessageHandler import MessageHandler
@@ -86,6 +87,7 @@ class DataCollector(object):
 				reply = {'ip': conf.get('mqtt', 'ip'),
 						 'port': conf.get('mqtt', 'port')}
 
+				# TODO replace this with class DataSender
 				self.mqtt.publish("esp_hub/device/{}/accept".format(device.id), json.dumps(reply))
 
 			elif device and device.status == DAO.Device.WAITING:
