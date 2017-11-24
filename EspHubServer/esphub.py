@@ -28,7 +28,7 @@ class HackedRunserver(BaseRunserverCommand):
 
 
 def _exit_signal_handler(signal, frame):
-	log.info("Interrupt!")
+	log.info("Keyboard interrupt!")
 	for task in task_to_stop:
 		task.stop()
 
@@ -136,6 +136,9 @@ def start(discovery, collecting, web_app_only, address_port):
 @click.option('--endless', default=True, type=bool, help="Run in infinite loop (default true)")
 def device_discovery(endless):
 	"""Start only device discovery function"""
+	# handle interrupt signal when user press ctrl+c
+	signal.signal(signal.SIGINT, _exit_signal_handler)
+
 	log.info("start device discovery ...")
 	_device_discovery(endless)
 
@@ -145,6 +148,9 @@ def device_discovery(endless):
 def collect_data(endless):
 	"""Start only device data collector"""
 	log.info("start collecting data ...")
+	# handle interrupt signal when user press ctrl+c
+	signal.signal(signal.SIGINT, _exit_signal_handler)
+	
 	_collect_data(endless)
 
 
