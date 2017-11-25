@@ -1,0 +1,28 @@
+<div class="card green darken-1">
+    <div class="card-content white-text">
+        <span class="card-title">Device values</span>
+        <p>
+        <table>
+            <tbody>
+            <tr>
+                <td data-field="type"><strong>Type</strong></td>
+                <td data-field="datetime"><strong>Last time</strong></td>
+                <td data-field="value" style="text-align:right"><strong>Value</strong></td>
+            </tr>
+            {% for value in actual_values %}
+                <tr>
+                    <td>{{ value.value_type|capfirst }}</td>
+                    <td>
+                        <span id="date-{{ value.name }}">{{ value.time|date:"j. E" }}</span>&nbsp;
+                        <span id="time-{{ value.name }}">{{ value.time|time:"H:i:s" }}</span>
+                    </td>
+                    <td style="text-align:right">
+                        <span id="value-{{ value.name }}"> {{ value.value }}</span>&nbsp;
+                        <span id="unit-{{ value.name }}">{{ value.unit }}</span>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
