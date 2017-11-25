@@ -31,6 +31,11 @@ class Device(Base):
 	status = Column('status', String(16), default='validated')
 	provided_func = Column('provided_func', CustomJson, nullable=True)
 
+	abilities = relationship('Ability', back_populates='device')
+	records = relationship('Record', back_populates='device')
+	telemetries = relationship('Telemetry', back_populates='device')
+	displays = relationship('Display', back_populates='device')
+
 	def __repr__(self):
 		return 'Device: <{}>'.format((self.id, self.name))
 
@@ -72,7 +77,7 @@ class Ability(Base):
 	description = Column('description', String, nullable=True)
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
-	device = relationship(Device, cascade='delete')
+	device = relationship(Device, cascade='delete', back_populates='abilities')
 
 	def __repr__(self):
 		return 'Ability: <{}>'.format((self.id, self.name, self.user_name, self.io, self.category, self.device_id))
@@ -131,7 +136,7 @@ class Record(Base):
 	value = Column('value', String(256))
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
-	device = relationship(Device)
+	device = relationship(Device, back_populates='records')
 
 	def __repr__(self):
 		return 'Record: <{}>'.format((self.id, self.time, self.name, self.value, self.device_id))
@@ -174,7 +179,7 @@ class Telemetry(Base):
 	hostname = Column('hostname', String(128), nullable=True)
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
-	device = relationship(Device)
+	device = relationship(Device, back_populates='telemetries')
 
 	def __repr__(self):
 		return 'Telemetry <{}>'.format((self.id, self.time, self.device_id, self.ssid, self.ip, self.mac))
@@ -201,7 +206,7 @@ class Display(Base):
 	params = Column('params', CustomJson, nullable=True)
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
-	device = relationship(Device, cascade='delete')
+	device = relationship(Device, cascade='delete', back_populates='displays')
 
 	def __repr__(self):
 		return "Display <{}>".format((self.id, self.display_name, self.screen_name))
