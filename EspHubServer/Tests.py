@@ -38,6 +38,16 @@ if __name__ == '__main__':
 		# for record in records:
 		# 	print(record)
 
+	# print('--------------')
+	with DAC.keep_session() as dbs:
+		dev = dbs.query(DAO.Device).filter(DAO.Device.id == 'dev1234').first()
+		print(dev)
+		print(dev.serialize())
+
+	from main import data_parsing
+	print(data_parsing.get_actual_device_values('dev1234'))
+
+
 	from Config.Config import Config
 	conf = Config.get_config()
 	print(conf.getint('discovery', 'interval'))
