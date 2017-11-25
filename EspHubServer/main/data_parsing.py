@@ -74,20 +74,19 @@ def get_all_input_abilities():
 	Prepare input abilities for display setting
 	:return: JSON list of devices witch provide input abilities and input abilities
 	"""
-	db = DBA.Dba(conf.get('db', 'path'))
-	records = db.get_devices()
 	output = []
-	for record in records:
-		abilities = json.loads(record.provided_func)
-		output_record = {'name': record.name, 'id': record.id}
-		abilities_list = []
-		for ability in abilities:
-			if ability['io'] == 'in':
-				abilities_list.append(ability)
+	with DAC.keep_session() as db:
+		for device in DBA.get_devices(db):
+			output_device = device.serialize()
 
-		if len(abilities_list) != 0:
-			output_record['abilities'] = abilities_list
-			output.append(output_record)
+			abilities_list = []
+			for ability in device.abilities:
+				if ability.io == DAO.Ability.IN:
+					abilities_list.append(ability.serialize())
+
+			if len(abilities_list) > 0:
+				output_device['abilities'] = abilities_list
+				output.append(output_device)
 
 	return output
 
