@@ -15,10 +15,10 @@ def get_actual_device_values(device_id, io_type='all'):
 	:param io_type: select in/out type of ability, default 'all' select both 'in' and 'out'
 	:return: JSON object with actual values, description, unit, ...
 	"""
+	device_values = []
 	with DAC.keep_session() as db:
 		device = DBA.get_device(db, device_id)
 
-		device_values = []
 		if device:
 			for ability in device.abilities:
 				# get newest record from db
@@ -32,7 +32,6 @@ def get_actual_device_values(device_id, io_type='all'):
 					else:
 						record_dict = {}
 
-					print(record_dict)
 					record_dict['value_type'] = ability.user_name
 					record_dict['unit'] = ability.unit
 					record_dict['category'] = ability.category
@@ -40,10 +39,9 @@ def get_actual_device_values(device_id, io_type='all'):
 					record_dict['desc'] = ability.description
 					record_dict['user_name'] = ability.user_name
 					record_dict['name'] = ability.name
-					print(record_dict)
 					device_values.append(record_dict)
 
-		return device_values
+	return device_values
 
 
 def get_records_for_charts(device_id, value_type, from_date, to_date):
@@ -55,20 +53,20 @@ def get_records_for_charts(device_id, value_type, from_date, to_date):
 	:param to_date: end of time interval
 	:return: JSON object of time labels and values
 	"""
-	# TODO move this logic to DB layer
-	db = DBA.Dba(conf.get('db', 'path'))
-	records = db.get_record_from_device(device_id, value_type, limit=conf.getint('db', 'default_records_limit'))
 	# TODO implement time interval from date - to date
-	values = [float(record.value) for record in records]
-	values.reverse()
 
-	response = {
-		# convert datetime objects to isoformat strings in reverse order
-		'labels': list(reversed([record.time.isoformat() for record in records])),
-		'values': values,
-	}
+	with DAC.keep_session() as db:
+		records = DBA.get_record_from_device(db, device_id, value_type, limit=conf.getint('db', 'default_records_limit'))
+		values = [float(record.value) for record in records]
+		values.reverse()
 
-	return response
+		response = {
+			# convert datetime objects to isoformat strings in reverse order
+			'labels': list(reversed([str(record.time) for record in records])),
+			'values': values,
+		}
+
+		return response
 
 
 def get_all_input_abilities():
