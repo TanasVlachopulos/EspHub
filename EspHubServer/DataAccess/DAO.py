@@ -40,7 +40,7 @@ class Device(Base):
 		return 'Device: <{}>'.format((self.id, self.name))
 
 	def serialize(self):
-		object_dic = self.__dict__
+		object_dic = self.__dict__.copy()
 		object_dic.pop('_sa_instance_state', None) # remove SQLAlchemy internal info
 		return object_dic
 
@@ -70,6 +70,8 @@ class Ability(Base):
 	:type device: Device
 	"""
 	__tablename__ = 'ability'
+	IN = 'in'
+	OUT = 'out'
 
 	id = Column('id', Integer, primary_key=True)
 	name = Column('name', String(256), nullable=False)
@@ -111,7 +113,7 @@ class Ability(Base):
 		Serialize object into dictionary.
 		:return: Object representation as dictionary.
 		"""
-		object_dic = self.__dict__
+		object_dic = self.__dict__.copy()
 		object_dic.pop('_sa_instance_state', None) # remove SQLAlchemy internal info
 		object_dic.pop('device', None) # remove non-serializable Device reference
 		return object_dic
@@ -158,7 +160,7 @@ class Record(Base):
 		Serialize object into dictionary.
 		:return: Object representation as dictionary.
 		"""
-		object_dic = self.__dict__
+		object_dic = self.__dict__.copy()
 		object_dic.pop('_sa_instance_state', None)
 		object_dic.pop('device', None)
 		object_dic['time'] = str(self.time)

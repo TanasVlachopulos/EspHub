@@ -35,7 +35,7 @@ def get_waiting_devices(session):
 	:param session: Database session.
 	:return: List of DAO Device objects.
 	"""
-	return session.query(Device).filter(Device.status == 'waiting').all()
+	return session.query(Device).filter(Device.status == Device.WAITING).all()
 
 
 def get_devices(session):
@@ -44,7 +44,7 @@ def get_devices(session):
 	:param session: Database session.
 	:return: List of DAO Device objects.
 	"""
-	session.query(Device).filter(Device.status != 'waiting').all()
+	return session.query(Device).filter(Device.status != Device.WAITING).all()
 
 
 def get_device(session, device_id):
@@ -65,7 +65,7 @@ def insert_device(session, device):
 	:param device: DAO Device object.
 	:type device: DAO.Device
 	"""
-	device.status = 'validated'
+	device.status = Device.VALIDATED
 	session.add(device)
 	log.debug("Add into devices: {}".format(device))
 
