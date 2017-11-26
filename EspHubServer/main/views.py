@@ -206,7 +206,7 @@ def waiting_devices_api(request):
 	with DAC.keep_session() as db:
 		devices = DBA.get_waiting_devices(db)
 
-		response = json.dumps([device.__dict__ for device in devices])
+		response = json.dumps([device.serialize() for device in devices])
 		return HttpResponse(response)
 
 

@@ -40,6 +40,8 @@
     <div class="row">
         {% include 'main/device_detail_tabs.html' with actual_values=actual_values %}
 
+        {# div first-tab-value indicate which tab will be loadef first (before clicking on tab), parameter data-value is used as input for script deviceDetailChart #}
+        <div id="first-tab-value" data-value="canvas-tab-{{ actual_values.0.name }}" hidden></div>
         {% for value in actual_values %}
             <div id="tab-{{ value.name }}" class="col s12 grey lighten-4">
                 <div style="width: 100%;">
@@ -64,7 +66,9 @@
         $(document).ready(function () {
             updateDeviceStatus("{% url 'main:telemetry_api' device.id %}", {{ device_status_interval }});
             updateDeviceValues("{% url 'main:device_actual_values_api' device.id %}", {{ device_values_interval }});
-            deviceDetailChart('canvas-tab-light');
+
+            // init tab with charts
+            deviceDetailChart($('#first-tab-value')[0].attributes['data-value'].nodeValue); // element first-tab-value is hidden and contain name of first tab
             $('.modal').modal(); // init modal windows
             $('ul.tabs').tabs({
                 'swipeable': false,
