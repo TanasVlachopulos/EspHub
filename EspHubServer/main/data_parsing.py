@@ -16,7 +16,7 @@ def get_actual_device_values(device_id, io_type='all'):
 	:return: JSON object with actual values, description, unit, ...
 	"""
 	device_values = []
-	with DAC.keep_session() as db:
+	with DAC.keep_weak_session() as db:
 		device = DBA.get_device(db, device_id)
 
 		if device:

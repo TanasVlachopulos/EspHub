@@ -53,3 +53,21 @@ def keep_session():
 		raise
 	finally:
 		session.close()
+
+@contextmanager
+def keep_weak_session():
+	"""
+	Provide session for scope of "with" operator.
+	Before closing session all objects are expunged from session so they can exists as detached objects.
+	:return: Session instance
+	"""
+	session = Session()
+	try:
+		yield session
+		session.expunge_all()
+		session.commit()
+	except:
+		session.rollback()
+		raise
+	finally:
+		session.close()
