@@ -17,18 +17,22 @@ except (NoSectionError, NoOptionError):
 
 Base = declarative_base()
 
-
 def init_db():
 	"""
 	Initialize database from models
 	"""
 	# import is necessary for load models, without this line tables won't be created !!!
 	import DataAccess.DAO
-	# Base.metadata.drop_all(engine)
+	# _drop_db()
 	Base.metadata.create_all(engine)
 	log = Log.get_logger()
 	log.debug('Initializing database.')
 
+def _drop_db():
+	"""
+	Drop all data from database.
+	"""
+	Base.metadata.create_all(engine)
 
 def get_session():
 	"""

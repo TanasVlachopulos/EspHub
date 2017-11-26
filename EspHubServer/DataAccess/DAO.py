@@ -29,7 +29,7 @@ class Device(Base):
 	id = Column('id', String(64), primary_key=True, unique=True)
 	name = Column('name', String(64), nullable=False)
 	status = Column('status', String(16), default='validated')
-	provided_func = Column('provided_func', CustomJson, nullable=True)
+	provided_func = Column('provided_func', CustomJson, nullable=False, default=list())
 
 	abilities = relationship('Ability', back_populates='device')
 	records = relationship('Record', back_populates='device')
@@ -43,6 +43,13 @@ class Device(Base):
 		object_dic = self.__dict__.copy()
 		object_dic.pop('_sa_instance_state', None)  # remove SQLAlchemy internal info
 		return object_dic
+
+	def to_json(self):
+		"""
+		Serialize object into JSON.
+		:return: String in JSON format.
+		"""
+		return json.dumps(self.serialize())
 
 
 class Ability(Base):
@@ -72,6 +79,14 @@ class Ability(Base):
 	__tablename__ = 'ability'
 	IN = 'in'
 	OUT = 'out'
+	CATEGORY_SENSOR = 'sensor'
+	CATEGORY_SWITCH = 'switch'
+	CATEGORY_BUTTON = 'button'
+	CATEGORY_DISPLAY = 'display'
+	TYPE_INT = 'int'
+	TYPE_FLOAT = 'float'
+	TYPE_STR = 'str'
+	TYPE_JSON = 'json'
 
 	id = Column('id', Integer, primary_key=True)
 	name = Column('name', String(256), nullable=False)
@@ -210,15 +225,15 @@ class Telemetry(Base):
 		return 'Telemetry <{}>'.format((self.id, self.time, self.device_id, self.ssid, self.ip, self.mac))
 
 	def serialize(self):
-			"""
-			Serialize object into dictionary.
-			:return: Object representation as dictionary.
-			"""
-			object_dic = self.__dict__.copy()
-			object_dic.pop('_sa_instance_state', None)
-			object_dic.pop('device', None)
-			object_dic['time'] = str(self.time)
-			return object_dic
+		"""
+		Serialize object into dictionary.
+		:return: Object representation as dictionary.
+		"""
+		object_dic = self.__dict__.copy()
+		object_dic.pop('_sa_instance_state', None)
+		object_dic.pop('device', None)
+		object_dic['time'] = str(self.time)
+		return object_dic
 
 	def to_json(self):
 		"""
@@ -226,6 +241,7 @@ class Telemetry(Base):
 		:return: String in JSON format.
 		"""
 		return json.dumps(self.serialize())
+
 
 class Display(Base):
 	"""
