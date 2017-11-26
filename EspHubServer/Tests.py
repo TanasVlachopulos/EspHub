@@ -48,7 +48,9 @@ if __name__ == '__main__':
 	# print(data_parsing.get_records_for_charts('dev1234', 'temp', '', ''))
 	print(data_parsing.get_all_input_abilities())
 
-
+	from DataAccess import DBA
+	with DAC.keep_session() as dbs:
+		print(DBA.get_devices(dbs))
 	# from Config.Config import Config
 	# conf = Config.get_config()
 	# print(conf.getint('discovery', 'interval'))

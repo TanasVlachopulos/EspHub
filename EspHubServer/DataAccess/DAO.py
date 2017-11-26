@@ -41,7 +41,7 @@ class Device(Base):
 
 	def serialize(self):
 		object_dic = self.__dict__.copy()
-		object_dic.pop('_sa_instance_state', None) # remove SQLAlchemy internal info
+		object_dic.pop('_sa_instance_state', None)  # remove SQLAlchemy internal info
 		return object_dic
 
 
@@ -114,8 +114,8 @@ class Ability(Base):
 		:return: Object representation as dictionary.
 		"""
 		object_dic = self.__dict__.copy()
-		object_dic.pop('_sa_instance_state', None) # remove SQLAlchemy internal info
-		object_dic.pop('device', None) # remove non-serializable Device reference
+		object_dic.pop('_sa_instance_state', None)  # remove SQLAlchemy internal info
+		object_dic.pop('device', None)  # remove non-serializable Device reference
 		return object_dic
 
 	def to_json(self):
@@ -166,6 +166,7 @@ class Record(Base):
 		object_dic['time'] = str(self.time)
 		return object_dic
 
+
 class Telemetry(Base):
 	"""
 	Table represent incoming telemetry from device.
@@ -207,6 +208,7 @@ class Telemetry(Base):
 
 	def __repr__(self):
 		return 'Telemetry <{}>'.format((self.id, self.time, self.device_id, self.ssid, self.ip, self.mac))
+
 
 class Display(Base):
 	"""
