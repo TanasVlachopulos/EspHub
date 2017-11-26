@@ -209,6 +209,23 @@ class Telemetry(Base):
 	def __repr__(self):
 		return 'Telemetry <{}>'.format((self.id, self.time, self.device_id, self.ssid, self.ip, self.mac))
 
+	def serialize(self):
+			"""
+			Serialize object into dictionary.
+			:return: Object representation as dictionary.
+			"""
+			object_dic = self.__dict__.copy()
+			object_dic.pop('_sa_instance_state', None)
+			object_dic.pop('device', None)
+			object_dic['time'] = str(self.time)
+			return object_dic
+
+	def to_json(self):
+		"""
+		Serialize object into JSON.
+		:return: String in JSON format.
+		"""
+		return json.dumps(self.serialize())
 
 class Display(Base):
 	"""
