@@ -3,9 +3,9 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 # from .models import Device
-# from .data_parsing import *
+from main import data_parsing
 from DataAccess import DAC, DAO, DBA
-# from DeviceCom import DataSender
+from DeviceCom import DataSender
 from Config import Config
 from Tools.Log import Log
 from Plots import DisplayPlot
@@ -28,7 +28,6 @@ def index(request):
 	with DAC.keep_session() as db:
 		devices = DBA.get_devices(db)
 
-		print(devices)
 		devices_id_lst = [device.id for device in devices]
 
 		response = {'msg': 'Devices',
@@ -46,24 +45,21 @@ def device_detail(request, device_id):
 	:param device_id: device ID
 	:return: device detail page
 	"""
-	db = DBA.Dba(conf.get('db', 'path'))
-	device = db.get_device(device_id)
-	# device = Device.get(device_id)
-	records = db.get_record_from_device(device_id, limit=10)
-	# records = Record.get_all(device_id, limit=10)
+	with DAC.keep_session() as db:
+		device = DBA.get_device(db, device_id)
+		records = DBA.get_record_from_device(db, device_id, limit=10)
 
-	actual_in_values = get_actual_device_values(device_id, io_type='in')
-	actual_out_values = get_actual_device_values(device_id, io_type='out')
-	print(actual_out_values)
+		actual_in_values = data_parsing.get_actual_device_values(device_id, io_type='in')
+		actual_out_values = data_parsing.get_actual_device_values(device_id, io_type='out')
 
-	response = {'device': device,
-				'values': records,
-				'actual_values': actual_in_values,
-				'actual_out_values': actual_out_values,
-				'device_status_interval': 30000,  # status refresh interval in seconds
-				'device_values_interval': 3000,  # values refresh interval in seconds
-				}
-	return render(request, 'main/device_detail.html', response)
+		response = {'device': device,
+					'values': records,
+					'actual_values': actual_in_values,
+					'actual_out_values': actual_out_values,
+					'device_status_interval': 30000,  # status refresh interval in seconds
+					'device_values_interval': 3000,  # values refresh interval in seconds
+					}
+		return render(request, 'main/device_detail.html', response)
 
 
 def waiting_devices(request):
@@ -72,15 +68,15 @@ def waiting_devices(request):
 	:param request:
 	:return: waiting device page
 	"""
-	db = DBA.Dba(conf.get('db', 'path'))
-	devices = db.get_waiting_devices()
+	with DAC.keep_session() as db:
+		devices = DBA.get_waiting_devices(db)
 
-	response = {'title': 'Waiting devices',
-				'devices': devices,
-				'input_abilities': input_abilities,
-				'output_abilities': output_abilities,
-				}
-	return render(request, 'main/waiting_devices.html', response)
+		response = {'title': 'Waiting devices',
+					'devices': devices,
+					'input_abilities': input_abilities,
+					'output_abilities': output_abilities,
+					}
+		return render(request, 'main/waiting_devices.html', response)
 
 
 def display(request, ability_name, device_id):
@@ -111,34 +107,28 @@ def display(request, ability_name, device_id):
 
 
 def verify_device(request, device_id):
-	db = DBA.Dba(conf.get('db', 'path'))
-	device = db.get_waiting_device(device_id)  # get waiting device for transfer to permanent devices table
-	db.remove_waiting_device(device_id)  # remove device from waiting devices table
+	with DAC.keep_session() as db:
+		device = DBA.get_device(db, device_id)
 
-	# if hidden remove input is set to false -> save new device to db
-	if request.POST['remove-device'] == 'false':
-		# sending MQTT message to device
-		sender = DataSender.DataSender()
-		sender.verify_device(device_id)
+		# if hidden remove input is set to false -> save new device to db
+		if request.POST['remove-device'] == 'false':
+			# sending MQTT message to device
+			sender = DataSender.DataSender()
+			sender.verify_device(device_id)
+			device.status = DAO.Device.VALIDATED
+			device.name = request.POST.get('device-name', device.name)
 
-		abilities = []
-		# get modified abilities from user form
-		for ability in device.provided_func:
-			io_type = 'in' if request.POST['category-' + ability] in input_abilities else 'out'
-			abilities.append(DAO.Ability(name=ability,
-										 io=io_type,
-										 user_name=request.POST['user-name-' + ability],
-										 category=request.POST['category-' + ability],
-										 unit=request.POST['unit-' + ability],
-										 desc=request.POST['desc-' + ability],
-										 ))
+			for ability in device.provided_func:
+				io_type = DAO.Ability.IN if request.POST['category-' + ability] in input_abilities else DAO.Ability.OUT
+				dao_ability = DAO.Ability(device=device,
+										  name=ability,
+										  user_name=request.POST.get('user-name-' + ability),
+										  category=request.POST.get('category-' + ability),
+										  unit=request.POST.get('unit-' + ability),
+										  desc=request.POST.get('desc-' + ability), )
+				db.add(dao_ability)
 
-		abilities_json = json.dumps([a.__dict__ for a in abilities])  # create json from abilities
-		new_device = DAO.Device(device.id, request.POST['device-name'], abilities_json)
-
-		db.insert_device(new_device)  # add new device to database
-
-	return HttpResponseRedirect(reverse('main:waiting_devices'))
+			return HttpResponseRedirect(reverse('main:waiting_devices'))
 
 
 def remove_device(request, device_id):
@@ -148,12 +138,12 @@ def remove_device(request, device_id):
 	:param device_id: device ID
 	:return: redirect to home page
 	"""
-	db = DBA.Dba(conf.get('db', 'path'))
-	if request.POST['remove-device'] == 'true':
-		print('true')
-		db.remove_device(device_id)
+	with DAC.keep_session() as db:
+		if request.POST['remove-device'] == 'true':
+			log.info("device {} will be removed.".format(device_id))
+			DBA.remove_device(db, device_id)
 
-	return HttpResponseRedirect(reverse('main:index'))
+		return HttpResponseRedirect(reverse('main:index'))
 
 
 def output_action(request, device_id, ability):
@@ -168,7 +158,7 @@ def output_action(request, device_id, ability):
 		sender = DataSender.DataSender()
 		sender.send_data_to_device(request.POST['device'], request.POST['ability'], request.POST['state'])
 		# sender.verify_device(device_id)
-		print('sending', request.POST['device'], request.POST['ability'], request.POST['state'])
+		log.info('sending', request.POST['device'], request.POST['ability'], request.POST['state'])
 
 	return HttpResponse('ok')
 
@@ -227,14 +217,14 @@ def telemetry_api(request, device_id):
 	:param device_id: device ID
 	:return: JSON last telemetry record from DB
 	"""
-	db = DBA.Dba(conf.get('db', 'path'))
-	telemetry = db.get_telemetry(device_id)
+	with DAC.keep_session() as db:
+		telemetry = DBA.get_telemetry(db, device_id)
 
-	if telemetry:
-		response = json.dumps(telemetry.__dict__)
-		return HttpResponse(response)
-	else:
-		return HttpResponse('{}')
+		if telemetry:
+			response = telemetry.to_json()
+			return HttpResponse(response)
+		else:
+			return HttpResponse('{}')
 
 
 def device_actual_values_api(request, device_id):
@@ -244,11 +234,7 @@ def device_actual_values_api(request, device_id):
 	:param device_id: device ID
 	:return: JSON last values records from DB
 	"""
-	device_values = get_actual_device_values(device_id)
-
-	# handle not serializable datetime objects in device_values
-	for value in device_values:
-		value['time'] = value['time'].isoformat() if 'time' in value else None
+	device_values = data_parsing.get_actual_device_values(device_id)
 
 	return HttpResponse(json.dumps(device_values))
 
@@ -261,7 +247,7 @@ def records_api(request, device_id, ability):
 	:param ability: name of ability
 	:return: JSON with chart parameters and plot data with values and time lables
 	"""
-	response = get_records_for_charts(device_id, ability, 0, 0)
+	response = data_parsing.get_records_for_charts(device_id, ability, 0, 0)
 
 	# convert datetime object to isoformat string
 	response['chart_type'] = 'line'
@@ -281,5 +267,4 @@ def display_preview_api(request, device_id, ability):
 	:param ability: ability name
 	:return: base64 uri with plot preview
 	"""
-
-	return HttpResponse(render_plot_64base_preview(device_id, ability))
+	return HttpResponse(data_parsing.render_plot_64base_preview(device_id, ability))
