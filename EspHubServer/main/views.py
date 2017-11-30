@@ -2,6 +2,7 @@ import json
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
+from django.forms import formset_factory
 # from .models import Device
 from main import data_parsing
 from DataAccess import DAC, DAO, DBA
@@ -9,6 +10,7 @@ from DeviceCom import DataSender
 from Config import Config
 from Tools.Log import Log
 from Plots import DisplayPlot
+from main import forms
 
 # TODO handle 404 page not found error
 # TODO maximalizovat predavani hodnot do templatu - snizit pocet leteraru v templatech
@@ -52,12 +54,21 @@ def device_detail(request, device_id):
 		actual_in_values = data_parsing.get_actual_device_values(device_id, io_type='in')
 		actual_out_values = data_parsing.get_actual_device_values(device_id, io_type='out')
 
+		# prepare forms for editing device
+		AbilityFormset = formset_factory(forms.EditAbilityForm, max_num=0)
+		ability_preset = [{'user_name': item.user_name, 'unit': item.unit, 'description': item.description} for item in device.abilities]
+		ability_formset = AbilityFormset(initial=ability_preset)
+
+		name_form = forms.EditDeviceForm({'device_name': device.name, 'device_id': device.id})
+
 		response = {'device': device,
 					'values': records,
 					'actual_values': actual_in_values,
 					'actual_out_values': actual_out_values,
 					'device_status_interval': 30000,  # status refresh interval in seconds
 					'device_values_interval': 3000,  # values refresh interval in seconds
+					'edit_device_form': name_form,
+					'edit_ability_formset': ability_formset
 					}
 		return render(request, 'main/device_detail.html', response)
 
@@ -125,7 +136,8 @@ def verify_device(request, device_id):
 										  user_name=request.POST.get('user-name-' + ability),
 										  category=request.POST.get('category-' + ability),
 										  unit=request.POST.get('unit-' + ability),
-										  desc=request.POST.get('desc-' + ability), )
+										  description=request.POST.get('desc-' + ability),
+										  io=io_type,)
 				db.add(dao_ability)
 
 			return HttpResponseRedirect(reverse('main:waiting_devices'))

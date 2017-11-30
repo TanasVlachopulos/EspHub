@@ -19,7 +19,7 @@
     </div>
 
     {# modal windows for setting buttons #}
-    {% include "main/device_detail_modals.html" with id=device.id %}
+    {% include "main/device_detail_modals.html" with id=device.id edit_device_form=edit_device_form edit_ability_formset=edit_ability_formset %}
 
     {# status and value cards #}
     <div class="row">

@@ -20,10 +20,14 @@
     <div class="modal-content">
         <h5>Edit device</h5>
         <br>
-        Are you sure to permanently remove this device.
+        <form action="{% url 'Apis:edit_device_detail_post' %}" method="post" id="device-setting-form">
+            {% csrf_token %}
+            {{ edit_device_form }}
+            {{ edit_ability_formset }}
+        </form>
     </div>
     <div class="modal-footer">
-        <a class="modal-action modal-close waves-effect waves-green btn-flat ">Edit</a>
+        <a class="modal-action modal-close waves-effect waves-green btn-flat " onclick="$('#device-setting-form').submit();">Edit</a>
         <a class="modal-action modal-close waves-effect waves-red btn-flat ">Cancel</a>
     </div>
 </div>
