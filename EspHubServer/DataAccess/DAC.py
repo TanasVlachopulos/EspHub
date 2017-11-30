@@ -24,6 +24,7 @@ def init_db():
 	# import is necessary for load models, without this line tables won't be created !!!
 	import DataAccess.DAO
 	# _drop_db()
+	# Base.metadata.drop_all(engine)
 	Base.metadata.create_all(engine)
 	log = Log.get_logger()
 	log.debug('Initializing database.')
@@ -32,7 +33,8 @@ def _drop_db():
 	"""
 	Drop all data from database.
 	"""
-	Base.metadata.create_all(engine)
+	# Base.metadata.create_all(engine)
+	pass
 
 def get_session():
 	"""
