@@ -99,6 +99,25 @@ def update_provided_func(session, device_id, function):
 	# This function was part of old DBA class, but is unnecessary
 	raise NotImplementedError
 
+def get_device_ability(session, device_id, ability_name):
+	"""
+	Get ability with specific name for given device.
+	:param session: Database session.
+	:param device_id: ID of device.
+	:param ability_name: Name of ability.
+	:return: Single DAO ability object.
+	"""
+	return session.query(Ability).filter(and_(Ability.name == ability_name, Ability.device_id == device_id)).first()
+
+def get_ability_by_id(session, ability_id):
+	"""
+	Get ability with specific ID
+	:param session: Database session.
+	:param ability_id: ID of ability.
+	:return: Single DAO Ability object.
+	"""
+	return session.query(Ability).get(ability_id)
+
 
 def get_record_from_device(session, device_id, value_type=None, order='desc', limit=600):
 	"""
