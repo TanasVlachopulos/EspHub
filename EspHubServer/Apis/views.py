@@ -30,7 +30,7 @@ def edit_device_detail_post(request, device_id):
 
 			with DAC.keep_session() as db:
 				device = DBA.get_device(db, device_id)
-				device.name = edit_device_form.cleaned_data.get('device_name')
+				device.name = edit_device_form.cleaned_data.get('name')
 
 				for form in edit_ability_formset:
 					ability_id = form.cleaned_data.get('id')
@@ -38,6 +38,7 @@ def edit_device_detail_post(request, device_id):
 					ability.user_name = form.cleaned_data.get('user_name')
 					ability.unit = form.cleaned_data.get('unit')
 					ability.description = form.cleaned_data.get('description')
+					ability.category = form.cleaned_data.get('category')
 
 			return HttpResponseRedirect(reverse('main:device_detail', args=[device_id]))
 		else:

@@ -1,0 +1,42 @@
+{# paramters: device_id, id, device_form, ability_formset #}
+<form action="{% url 'Apis:edit_device_detail_post' device_id %}" method="post" id="{{ id }}">
+    {% csrf_token %}
+    <div class="row">
+        <div class="input-field col s12">
+            {{ device_form.name }}
+            <label for="{{ device_form.name.id_for_label }}">{{ device_form.name.label }}</label>
+        </div>
+    </div>
+    {{ ability_formset.management_form }}
+    {% for ability_form in ability_formset %}
+        <div class="row">
+            <div hidden>
+                {{ ability_form.id }}
+            </div>
+            <div class="input-field col s12 m8 l3">
+                {{ ability_form.user_name }}
+                <label for="{{ ability_form.user_name.id_for_label }}">{{ ability_form.user_name.label }}</label>
+            </div>
+            <div class="input-field col s12 m4 l2">
+                {{ ability_form.unit }}
+                <label for="{{ ability_form.unit.id_for_label }}">{{ ability_form.unit.label }}</label>
+            </div>
+            <div class="input-field col s12 m8 l4">
+                {{ ability_form.description }}
+                <label for="{{ ability_form.description.id_for_label }}">{{ ability_form.description.label }}</label>
+            </div>
+            <div class="input-field col s12 m4 l3">
+                {{ ability_form.category }}
+                <label for="{{ ability_form.category.id_for_label }}">{{ ability_form.category.label }}</label>
+            </div>
+        </div>
+    {% endfor %}
+    {#        {{ edit_device_form }}#}
+    {#        {{ ability_formset }}#}
+</form>
+
+<script>
+    $(document).ready(function () {
+        $('select').material_select();
+    });
+</script>

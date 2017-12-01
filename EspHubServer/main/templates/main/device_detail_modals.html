@@ -16,15 +16,16 @@
     </div>
 </div>
 
-<div id="modal-edit" class="modal">
+<div id="modal-edit" class="modal modal-fixed-footer">
     <div class="modal-content">
         <h5>Edit device</h5>
         <br>
-        <form action="{% url 'Apis:edit_device_detail_post' id %}" method="post" id="device-setting-form">
-            {% csrf_token %}
-            {{ edit_device_form }}
-            {{ edit_ability_formset }}
-        </form>
+{#        <form action="{% url 'Apis:edit_device_detail_post' id %}" method="post" id="device-setting-form">#}
+{#            {% csrf_token %}#}
+{#            {{ edit_device_form }}#}
+{#            {{ edit_ability_formset }}#}
+{#        </form>#}
+        {% include 'main/forms/device_detail_form.html' with device_id=id id='device-setting-form' device_form=edit_device_form ability_formset=edit_ability_formset %}
     </div>
     <div class="modal-footer">
         <a class="modal-action modal-close waves-effect waves-green btn-flat " onclick="$('#device-setting-form').submit();">Edit</a>
