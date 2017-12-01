@@ -56,7 +56,7 @@ def device_detail(request, device_id):
 
 		# prepare forms for editing device
 		AbilityFormset = formset_factory(forms.EditAbilityForm, max_num=0)
-		ability_preset = [{'user_name': item.user_name, 'unit': item.unit, 'description': item.description} for item in device.abilities]
+		ability_preset = [item.serialize() for item in device.abilities]
 		ability_formset = AbilityFormset(initial=ability_preset)
 
 		name_form = forms.EditDeviceForm({'device_name': device.name, 'device_id': device.id})

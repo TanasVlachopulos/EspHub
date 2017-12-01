@@ -20,7 +20,7 @@
     <div class="modal-content">
         <h5>Edit device</h5>
         <br>
-        <form action="{% url 'Apis:edit_device_detail_post' %}" method="post" id="device-setting-form">
+        <form action="{% url 'Apis:edit_device_detail_post' id %}" method="post" id="device-setting-form">
             {% csrf_token %}
             {{ edit_device_form }}
             {{ edit_ability_formset }}
