@@ -170,7 +170,7 @@ def output_action(request, device_id, ability):
 		sender = DataSender.DataSender()
 		sender.send_data_to_device(request.POST['device'], request.POST['ability'], request.POST['state'])
 		# sender.verify_device(device_id)
-		log.info('sending', request.POST['device'], request.POST['ability'], request.POST['state'])
+		log.info('sending {} {} {}'.format(request.POST['device'], request.POST['ability'], request.POST['state']))
 
 	return HttpResponse('ok')
 
