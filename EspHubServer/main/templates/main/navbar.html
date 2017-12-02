@@ -2,12 +2,12 @@
     <div class="nav-wrapper container">
         {#        <a id="logo-container" href="{% url 'main:index' %}" class="brand-logo center">Logo</a>#}
         <ul class="left hide-on-med-and-down">
-            <li><a href="{% url 'main:index' %}"><i class="material-icons">device_hub</i> </a></li>
+            <li><a href="{% url 'main:index' %}"><i class="material-icons left">device_hub</i>EspHubServer</a></li>
         </ul>
         <ul class="right hide-on-med-and-down">
-            <li><a href="{% url 'main:index' %}">Devices</a></li>
-            <li><a href="{% url 'main:waiting_devices' %}">Waiting devices</a></li>
-            <li><a href="{% url 'main:settings' %}">Settings</a></li>
+            <li><a href="{% url 'main:index' %}"><i class="material-icons right">devices_other</i> Devices</a></li>
+            <li><a href="{% url 'main:waiting_devices' %}"><i class="material-icons right">hourglass_empty</i> Waiting devices</a></li>
+            <li><a href="{% url 'main:settings' %}"><i class="material-icons right">settings</i> Settings</a></li>
         </ul>
 
         <ul id="nav-mobile" class="side-nav">
@@ -21,7 +21,7 @@
                 </div>
             </li>
             <li><a href="{% url 'main:index' %}"><i class="material-icons">devices_other</i> Devices</a></li>
-            <li><a href="{% url 'main:waiting_devices' %}"><i class="material-icons">find_replace</i>Waiting devices</a></li>
+            <li><a href="{% url 'main:waiting_devices' %}"><i class="material-icons">hourglass_empty</i>Waiting devices</a></li>
             <li><a href="{% url 'main:settings' %}"><i class="material-icons">settings</i>Settings</a></li>
         </ul>
         <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
