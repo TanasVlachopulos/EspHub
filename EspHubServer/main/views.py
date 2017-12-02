@@ -114,6 +114,67 @@ def display(request, ability_name, device_id):
 	return render(request, 'main/display.html', response)
 
 
+def settings(request):
+	"""
+	Render setting page. Obtain setting forms and bind it with Configuration.
+	Handle Get and Post requests.
+	:param request:
+	:return:
+	"""
+	formset = [
+		{
+			'title': forms.BrokerSettingsForm.title,
+			'section_name': 'mqtt',
+			'form': forms.BrokerSettingsForm
+		},
+		{
+			'title': forms.DiscoverySettingsForm.title,
+			'section_name': 'discovery',
+			'form': forms.DiscoverySettingsForm,
+		},
+	]
+
+	if request.method == 'GET':
+		# handle page rendering
+
+		# initiate forms with config data from given section
+		for item in formset:
+			form = item.get('form')  # get form class
+			item['form'] = form(dict(conf.items(item.get('section_name'))))  # create instance and pass items from config
+
+		return render(request, 'main/settings/server_setting.html', {'forms': formset})
+
+	elif request.method == 'POST':
+		# handle incoming data
+
+		for item in formset:
+			# loop in all subforms
+			form_class = item.get('form')
+			form = form_class(request.POST)
+
+			# check if subform is valid
+			if form.is_valid():
+				section = item.get('section_name')
+				log.info("Setting form section '{}' is valid.".format(section))
+				conf_dic = dict(conf.items(section))
+
+				for key, value in form.cleaned_data.items():
+					if key in conf_dic:
+						conf.set(section, key, str(value))  # update global configuration
+					else:
+						log.error("Item '{}' is not in config.".format(key))
+
+		# TODO reload server if button 'save and restart' was pressed
+		reload = request.POST.get('reload')  # if reload pressed then 'True' else 'False'
+
+		log.info("Write changes into config file.")
+		Config.write_config(conf)  # save global configuration
+		return HttpResponseRedirect(reverse('main:settings'))
+	else:
+		log.error("Invalid type of HTTP request.")
+		return HttpResponse('error')
+
+
 """ FORMS """
 
 
@@ -137,7 +198,7 @@ def verify_device(request, device_id):
 										  category=request.POST.get('category-' + ability),
 										  unit=request.POST.get('unit-' + ability),
 										  description=request.POST.get('desc-' + ability),
-										  io=io_type,)
+										  io=io_type, )
 				db.add(dao_ability)
 
 			return HttpResponseRedirect(reverse('main:waiting_devices'))

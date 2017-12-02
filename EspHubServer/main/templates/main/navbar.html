@@ -7,6 +7,7 @@
         <ul class="right hide-on-med-and-down">
             <li><a href="{% url 'main:index' %}">Devices</a></li>
             <li><a href="{% url 'main:waiting_devices' %}">Waiting devices</a></li>
+            <li><a href="{% url 'main:settings' %}">Settings</a></li>
         </ul>
 
         <ul id="nav-mobile" class="side-nav">
@@ -20,8 +21,8 @@
                 </div>
             </li>
             <li><a href="{% url 'main:index' %}"><i class="material-icons">devices_other</i> Devices</a></li>
-            <li><a href="{% url 'main:waiting_devices' %}"><i class="material-icons">find_replace</i>Waiting devices</a>
-            </li>
+            <li><a href="{% url 'main:waiting_devices' %}"><i class="material-icons">find_replace</i>Waiting devices</a></li>
+            <li><a href="{% url 'main:settings' %}"><i class="material-icons">settings</i>Settings</a></li>
         </ul>
         <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
     </div>

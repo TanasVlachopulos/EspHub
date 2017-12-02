@@ -1,0 +1,24 @@
+{% extends "main/base.html" %}
+
+{% block title %}Server settings{% endblock %}
+
+{% block content %}
+    <h3>Server settings</h3>
+
+    <form id="settings-form" method="post">
+        {% csrf_token %}
+        {% for section in forms %}
+            <h5>{{ section.title }}</h5>
+            {{ section.form }}
+        {% endfor %}
+        <input type="hidden" id="reload-input" name="reload" value="False">
+    </form>
+
+    <div class="right-align">
+        <button type="submit" form="settings-form" value="Submit" class="waves-effect waves-light orange btn" onclick="$('#reload-input').val('True'); ">
+            Save and restart
+        </button>
+        <button type="submit" form="settings-form" value="Submit" class="waves-effect waves-light green btn">Save</button>
+    </div>
+
+{% endblock %}

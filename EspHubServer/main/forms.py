@@ -25,3 +25,15 @@ class EditAbilityForm(forms.Form):
 class EditDeviceForm(forms.Form):
 	validator_max_len = validators.MaxLengthValidator(64)
 	name = forms.CharField(label='Device name', max_length=64, required=True, validators=[validator_max_len])
+
+class BrokerSettingsForm(forms.Form):
+	title = 'Broker settings'
+	ip = forms.CharField(label='Broker address', max_length=128, required=True)
+	port = forms.DecimalField(label='Broker port', required=True, initial=1883)
+	server_name = forms.CharField(label='EspHub server name', required=True, max_length=128)
+
+class DiscoverySettingsForm(forms.Form):
+	title = 'Discovery settings'
+	broadcast = forms.GenericIPAddressField(label='Discovery broadcast address', required=True)
+	discovery_port = forms.DecimalField(label='Discovery port', required=True)
+	interval = forms.DecimalField(label='Discovery interval', required=True, initial=5)
