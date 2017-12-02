@@ -22,9 +22,6 @@ def edit_device_detail_post(request, device_id):
 		EditAbilityFormset = formset_factory(forms.EditAbilityForm)
 		edit_ability_formset = EditAbilityFormset(request.POST)
 
-		print(edit_device_form.is_valid())
-		print(edit_ability_formset.is_valid())
-
 		if edit_device_form.is_valid() and edit_ability_formset.is_valid():
 			log.debug("Editing device '{}'.".format(device_id))
 
@@ -43,5 +40,4 @@ def edit_device_detail_post(request, device_id):
 			return HttpResponseRedirect(reverse('main:device_detail', args=[device_id]))
 		else:
 			log.warning("form is invalid")
-
-	return HttpResponse('fail')
+			return HttpResponse('fail')

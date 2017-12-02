@@ -16,13 +16,13 @@ class Config(object):
 		if setting_dir:
 			if not os.path.exists(setting_dir):
 				os.makedirs(setting_dir)
-			self.path = os.path.join(setting_dir, Config.CONFIG_NAME)
+			Config.path = os.path.join(setting_dir, Config.CONFIG_NAME)
 		else:
-			self.path = self.CONFIG_NAME
+			Config.path = Config.CONFIG_NAME
 
-		if not os.path.isfile(self.path):
-			open(self.path, 'w').close()
-		config_parser.read(self.path)
+		if not os.path.isfile(Config.path):
+			open(Config.path, 'w').close()
+		config_parser.read(Config.path)
 
 		Config.config = config_parser
 
