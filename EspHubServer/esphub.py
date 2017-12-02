@@ -49,7 +49,7 @@ def _device_discovery(endless=True):
 					  "port": conf.getint('mqtt', 'port')})
 
 	esp_discovery = Discovery.EspDiscovery(conf.get('discovery', 'broadcast'),
-										   conf.getint('discovery', 'port'),
+										   conf.getint('discovery', 'discovery_port'),
 										   msg,
 										   conf.getint('discovery', 'interval'), )
 	esp_discovery.start()
