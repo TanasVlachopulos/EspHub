@@ -214,7 +214,7 @@ def remove_device(request, device_id):
 	with DAC.keep_session() as db:
 		if request.POST['remove-device'] == 'true':
 			log.info("device {} will be removed.".format(device_id))
-			DBA.remove_device(db, device_id)
+			DBA.remove_device(db, device_id, cascade=True)
 
 		return HttpResponseRedirect(reverse('main:index'))
 
