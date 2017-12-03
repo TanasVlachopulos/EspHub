@@ -82,8 +82,8 @@ def cli():
 	"""EspHub home automation server"""
 	# magic with system path
 	sys.path.append('..')
-	sys.path.append('/WebUi')
-	os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'WebUi.settings')
+	sys.path.append('/EspHubServer')
+	os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'EspHubServer.settings')
 
 
 @cli.command()
