@@ -7,6 +7,7 @@ from DeviceCom.MessageHandler import MessageHandler
 from Config.Config import Config
 from Tools.Log import Log
 import json
+from datetime import datetime
 
 conf = Config.get_config()
 log = Log.get_logger()
@@ -128,6 +129,7 @@ class DataCollector(object):
 			device = DBA.get_device(db, device_id)
 			if device and device.status == DAO.Device.VALIDATED:
 				telemetry = DAO.Telemetry(device=device,
+										  time=datetime.now(),
 										  device_id=device.id,
 										  rssi=data.get('rssi'),
 										  heap=data.get('heap'),
@@ -158,6 +160,7 @@ class DataCollector(object):
 				# check if device is in database
 				if device and device.status == device.VALIDATED:
 					record = DAO.Record(device=device,
+										time=datetime.now(), # this line is important, default time is time of module DAO initialization
 										name=data.get('type'),
 										value=data.get('value'))
 					DBA.insert_record(db, record)
