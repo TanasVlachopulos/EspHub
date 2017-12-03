@@ -164,15 +164,16 @@ class EspHubUnilib(object):
 		self.server_candidate = None  # candidate for future server received from UDP discovery
 		self.validated = False
 
+	def start(self):
 		broker_info = self._get_broker_config()
 		# try to connect with config values
 		if broker_info and self.check_server(broker_info.get('address'), broker_info.get('port')):
+			self.log.info("Using config values for connection: server = {}, port = {}".format(broker_info.get('address'), broker_info.get('port')))
 			validation_interval = self.config.getint('general', 'accept-timeout', fallback=20)
-			self.log.info("Using config values for connection: server={}, port={}".format(broker_info.get('address'), broker_info.get('port')))
 
 			# wait for server accept msg
 			if self.waiting_for_hello_response.wait(timeout=validation_interval):
-				self.log.info("Server {} has been validated.".format(broker_info.get('address')))
+				self.log.info("Server {} has been validated. Connected with HubServer.".format(broker_info.get('address')))
 				self.waiting_for_hello_response.clear()
 			else:
 				self.log.error("Server {} has not been validate in given time {} seconds.".format(broker_info.get('address'), validation_interval))
@@ -274,7 +275,6 @@ class EspHubUnilib(object):
 
 		final_time = time.time() + timeout
 
-		# TODO fix bug with argument in on disconnect callback - see issue #22
 		self.log.info("Start server discovery.")
 		while not self.validated:
 			try:
@@ -330,21 +330,30 @@ class EspHubUnilib(object):
 		"""
 		Handler Accept message (response to Hello message) from server
 		"""
+		self.log.info("Receiving hello message.")
 		try:
 			server_reply = json.loads(msg.payload.decode("utf-8"))
+
+			# handle if port number is string, caste string to int
+			if isinstance(server_reply.get('port'), str) and server_reply.get('port').isdigit():
+				server_reply['port'] = int(server_reply.get('port'))
+
 			self.log.debug("Hello reply: {}".format(server_reply))
 
 			# compare server candidate against hello message
 			if self.server_candidate == server_reply:
-				self.log.info("Server candidate validated.")
+				self.log.info("Hello response validated.")
 				self._write_server_to_config(server_reply.get('ip'), server_reply.get('port'))
 				self.validated = True
 				self.waiting_for_hello_response.set()
+			else:
+				print(self.server_candidate)
+				self.log.error("Server candidate does not match Hello reply.")
 
-		except json.JSONDecodeError:
-			self.log.error("Cannot parse hello reply.")
-
-		self.log.info("Receiving hello message.")
+		except json.JSONDecodeError as e:
+			self.log.error("Cannot parse hello reply. Error: {}".format(e))
+		except ValueError as e:
+			self.log.error("Invalid data type in hello reply. Error: {}".format(e))
 
 	def _generate_hello_msg(self):
 		"""
@@ -378,3 +387,4 @@ class EspHubUnilib(object):
 if __name__ == "__main__":
 	lib = EspHubUnilib('test device')
 	lib.abilities = ['test']
+	lib.start()
