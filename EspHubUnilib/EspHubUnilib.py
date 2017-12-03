@@ -107,7 +107,7 @@ class MqttHandler(object):
 			self.log.info("Successfully connected to MQTT broker")
 			self.is_connected = True
 
-	def _on_disconnect_callback(self, client, userdata, flags, rc):
+	def _on_disconnect_callback(self, client, userdata, rc):
 		self.log.warning("Disconnected from MQTT broker")
 		self.is_connected = False
 
