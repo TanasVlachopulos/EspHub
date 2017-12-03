@@ -101,12 +101,15 @@ class DataCollector(object):
 
 				# check if information about abilities are in JSON serializable format
 				abilities = None
-				if self.verify_json(data.get('ability')):
-					abilities = json.loads(data.get('ability'))
+				ability_raw_data = data.get('ability')
+				if isinstance(ability_raw_data, list):
+					abilities = ability_raw_data
+				elif self.verify_json(ability_raw_data):
+					abilities = json.loads(ability_raw_data)
 				else:
 					log.warning("Abilities received from device {} are in invalid format.".format(data.get('name')))
 					try:
-						abilities = json.loads(self.normalize_ability_message(data.get('ability')))
+						abilities = json.loads(self.normalize_ability_message(ability_raw_data))
 					except json.JSONDecodeError:
 						log.exception("Cannot parse abilities provided from device {}.".format(data.get('name')))
 
