@@ -17,9 +17,13 @@ if __name__ == '__main__':
 
 	with DAC.keep_session() as db:
 		# record = db.query(DAO.Record).get(375)
+		device = DBA.get_device(db, '383646ee-fe07-4660-940e-51f5b33a6cf6')
+		print(device)
+
 		records = DBA.get_record_from_device(db, '828530', 'switch', limit=5)
 		for record in records:
 			print(record.id, record.time)
+
 
 # with DAC.keep_session() as dbs:
 # 	dev = DAO.Device(id='dev1234', name='My Test device', provided_func=['temp', 'hum'], status=DAO.Device.VALIDATED)
