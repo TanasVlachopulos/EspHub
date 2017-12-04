@@ -146,7 +146,7 @@ void EspHubDiscovery::sendData(const char *type, const float value)
 void EspHubDiscovery::sendJson(const char *topic_part, const char *json_str)
 {
 	String topic = MAIN_TOPIC;
-	topic += ESP.getChipId();
+	topic += (int)ESP.getEfuseMac();
 	topic += "/";
 	topic += topic_part;
 
@@ -234,13 +234,13 @@ bool EspHubDiscovery::checkServer(const char *ip, int port)
 	if (!client.connected()) // try connect
 	{
 		Serial.print("ESP_HUB: Attempting MQTT connection ... ");
-		String chipId = String(ESP.getChipId());
+		String chipId = String((int)ESP.getEfuseMac());
 		if (client.connect(chipId.c_str()))
 		{
 			client.setCallback(checkServerCallback);
 
 			String topic = "esp_hub/device/";
-			topic += ESP.getChipId();
+			topic += (int)ESP.getEfuseMac();
 			topic += "/#";
 			client.subscribe(topic.c_str()); // subscribe device topic
 
@@ -274,7 +274,7 @@ bool EspHubDiscovery::checkServer(const char *ip, int port)
 void EspHubDiscovery::checkServerCallback(char *topic, byte *payload, unsigned int length)
 {
 	String local_topic = "esp_hub/device/";
-	local_topic += ESP.getChipId();
+	local_topic += (int)ESP.getEfuseMac();
 	local_topic += "/accept";
 
 	if (strcmp(topic, local_topic.c_str()) == 0)
@@ -316,7 +316,7 @@ void EspHubDiscovery::generateHelloMsg(char *buff, int buff_size)
 	StaticJsonBuffer<JSON_SIZE> json_buffer;
 	JsonObject &json = json_buffer.createObject();
 	json["name"] = device_name;
-	json["id"] = ESP.getChipId();
+	json["id"] = (int)ESP.getEfuseMac();
 	json["ability"] = this->abilities;
 
 	json.printTo(buff, buff_size);
@@ -392,7 +392,7 @@ void EspHubDiscovery::writeServerToEeprom(const char *ip, int port)
 void EspHubDiscovery::internalCallback(char *topic, uint8_t *payload, unsigned int length)
 {
 	String local_topic = MAIN_TOPIC;
-	local_topic += ESP.getChipId();
+	local_topic += (int)ESP.getEfuseMac();
 	local_topic += "/";
 	local_topic += CMD_TOPIC;
 
@@ -421,7 +421,7 @@ void EspHubDiscovery::sendTelemetryData()
 	WiFi.macAddress().toCharArray(mac, 18);
 
 	json["heap"] = ESP.getFreeHeap();
-	json["real_f_size"] = ESP.getFlashChipRealSize();
+	json["real_f_size"] = ESP.getFlashChipSize();
 	json["cycles"] = ESP.getCycleCount();
 	json["rssi"] = WiFi.RSSI();
 	json["ssid"] = ssid;
@@ -429,7 +429,7 @@ void EspHubDiscovery::sendTelemetryData()
 	json["mac"] = mac;
 
 	String topic = MAIN_TOPIC;
-	topic += ESP.getChipId();
+	topic += (int)ESP.getEfuseMac();
 	topic += "/";
 	topic += TELEMETRY_TOPIC;
 	String msg;
