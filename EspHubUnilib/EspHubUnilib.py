@@ -1,7 +1,7 @@
 import configparser
 import os
 import threading
-
+import select
 import paho.mqtt.client as mqtt
 import socket
 import json
@@ -18,7 +18,12 @@ class Log(object):
 		Init logger to console and file in library home directory.
 		Log has should have only one instance, so call get_logger method instead of constructor.
 		"""
-		path = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'esp_hub_unilib.log')
+		path = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)
+		if not os.path.exists(path):
+			os.makedirs(path)
+
+		path = os.path.join(path, 'esp_hub_unilib.log')
+
 		log = logging.getLogger("EspHubUnilib")
 		log.setLevel(logging.DEBUG)
 		lh = logging.FileHandler(path)
@@ -180,6 +185,35 @@ class EspHubUnilib(object):
 		else:
 			self.server_discovery()
 
+		self._create_pipes()
+		self.log.debug("Starting mainloop.")
+		while self.validated:
+			time.sleep(3)
+			# TODO send telemetry
+
+	def _create_pipes(self):
+		"""
+		Create pipes in project home dir. One pipe for each registered ability.
+		:return:
+		"""
+		root_dir = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)
+
+		pipe_paths = []
+		try:
+			for ability in self.abilities:
+				pipe_path = os.path.join(root_dir, ability)
+				if not os.path.exists(pipe_path):
+					os.mkfifo(pipe_path)
+				pipe_paths.append(pipe_path)
+
+				self.log.info("Creating pipes.")
+
+				# TODO open write stream into pipe - hold pipe in blocking reading state
+		except AttributeError as e:
+			self.log.error("Pipeline interface is not supported on this OS. Feature sending data over pipeline will be disabled.")
+
+		return pipe_paths
+
 	def _get_broker_config(self):
 		try:
 			return {'address': self.config.get('broker', 'address'),
@@ -285,7 +319,7 @@ class EspHubUnilib(object):
 					self.log.error("Server discovery timeout.")
 					break
 				data, addr = sock.recvfrom(1024)
-				incoming_data = json.loads(data)
+				incoming_data = json.loads(data.decode('utf-8'))
 				self.log.debug("Receiving UDP message from {}.".format(addr))
 
 				# try to use server from incoming message
@@ -303,7 +337,7 @@ class EspHubUnilib(object):
 			except socket.timeout:
 				self.log.error("Server discovery timeout.")
 				break
-			except json.JSONDecodeError:
+			except ValueError:
 				self.log.warning("UDP discover message invalid format.")
 
 	def check_server(self, ip, port):
