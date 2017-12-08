@@ -24,7 +24,7 @@ int ledStatus = LOW;
 
 void setup()
 {
-    Serial.begin(115200);
+	Serial.begin(115200);
 
 	// lightMeter.begin(BH1750_CONTINUOUS_HIGH_RES_MODE);
 
@@ -34,7 +34,7 @@ void setup()
 
 	hub.setCallback(callback);
 	hub.setAbilities("['esp_test']");
-    hub.begin();
+	hub.begin();
 
 	// init Dallas sensor
 	// DS18B20.begin();
@@ -49,7 +49,7 @@ void setup()
 
 void loop()
 {
-    hub.loop();
+	hub.loop();
 	if (millis() - timer > 7000)
 	{
 		// hub.sendData("light", lightMeter.readLightLevel());
@@ -59,8 +59,8 @@ void loop()
 	}
 
 	// double pressTime = detectBtn(D7);
-	
-	// short button press under 5s 
+
+	// short button press under 5s
 	// if (pressTime > 0 && pressTime < 5000)
 	// {
 	// 	// switch LED status
@@ -88,7 +88,7 @@ void loop()
 	// 		digitalWrite(D0, HIGH);
 	// 		delay(150);
 	// 	}
-	// 	// reset device 
+	// 	// reset device
 	// 	hub.clearEeprom();
 	// 	WiFiManager wifiManager;
 	// 	wifiManager.resetSettings();
@@ -100,7 +100,7 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
 {
 	Serial.println(topic);
 	StaticJsonBuffer<300> jsonBuffer;
-	JsonObject& root = jsonBuffer.parseObject((char *)payload);
+	JsonObject &root = jsonBuffer.parseObject((char *)payload);
 
 	if (!root.success())
 	{
@@ -147,7 +147,7 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
 // float getTemperature() {
 //   float temp;
 //   do {
-//     DS18B20.requestTemperatures(); 
+//     DS18B20.requestTemperatures();
 //     temp = DS18B20.getTempCByIndex(0);
 //     delay(100);
 //   } while (temp == 85.0 || temp == (-127.0));

@@ -1,8 +1,8 @@
 #include "EspHubDiscovery.h"
 
-char server_ip[16] = { 0 };
-int server_port = 1883; 				// server port - default 1883
-long last_time = 0;     				// time measurement variable
+char server_ip[16] = {0};
+int server_port = 1883; // server port - default 1883
+long last_time = 0;		// time measurement variable
 
 // Custom user defined callback function
 std::function<void(char *, uint8_t *, unsigned int)> custom_callback;
@@ -46,7 +46,7 @@ void EspHubDiscovery::begin()
 
 	client.setCallback(internalCallback); // set client Callback for handling server commands and user messages
 	// set last_time to oposit of TELEMETRY_INTERVAL -> loop function send telemetry immediately after device start and begin function, otherwise we have to wait TELEMETRY_INTERVAL time after device start
-	last_time = (-TELEMETRY_INTERVAL); 
+	last_time = (-TELEMETRY_INTERVAL);
 	Serial.println("ESP_HUB: Ready");
 }
 
@@ -142,7 +142,7 @@ void EspHubDiscovery::sendData(const char *type, const float value)
 
 /// Send string to server with given topic header
 /// @param topic_part last part of MQTT message topic - device identificator (esp_hub/device/<device_id>/) is predefined
-/// @param json_str string in json format to send to the server 
+/// @param json_str string in json format to send to the server
 void EspHubDiscovery::sendJson(const char *topic_part, const char *json_str)
 {
 	String topic = MAIN_TOPIC;
@@ -186,7 +186,7 @@ void EspHubDiscovery::serverDiscovery()
 		{
 			// Serial.printf("Received %d bytes from %s, port %d\n", packet_size, udp.remoteIP().toString().c_str(), udp.remotePort());
 			// get UDP msg from server
-			char in_msg[UDP_MSG_SIZE] = { 0 };
+			char in_msg[UDP_MSG_SIZE] = {0};
 			int msg_len = udp.read(in_msg, UDP_MSG_SIZE);
 			if (msg_len > 0)
 			{
@@ -219,7 +219,7 @@ void EspHubDiscovery::serverDiscovery()
 		{
 			client.loop();
 		}
-		yield();		   // handle WiFi events
+		yield();				   // handle WiFi events
 	} while (!verified_to_server); // check global property verified_to_server
 }
 
@@ -259,7 +259,7 @@ bool EspHubDiscovery::checkServer(const char *ip, int port)
 
 		// sending hello msg
 		Serial.println("ESP_HUB: Sending hello message");
-		char buff[JSON_SIZE] = { 0 };
+		char buff[JSON_SIZE] = {0};
 		this->generateHelloMsg(buff, JSON_SIZE);
 		client.publish("esp_hub/device/hello", buff);
 		last_time = millis(); // for timer in discovery function
@@ -331,7 +331,7 @@ bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
 	Serial.println("ESP_HUB: Read from EEPROM");
 	EEPROM.begin(EEPROM_SIZE); // init EEPROM
 
-	char buff[EEPROM_SIZE] = { 0 };
+	char buff[EEPROM_SIZE] = {0};
 
 	for (int i = 0; i < EEPROM_SIZE; i++) // read from memory
 	{
@@ -373,7 +373,7 @@ void EspHubDiscovery::writeServerToEeprom(const char *ip, int port)
 	json["ip"] = ip;
 	json["port"] = port;
 
-	char buff[EEPROM_SIZE] = { 0 };
+	char buff[EEPROM_SIZE] = {0};
 	json.printTo(buff, EEPROM_SIZE);
 
 	for (int i = 0; i < EEPROM_SIZE; i++) // writeto EEPROM
