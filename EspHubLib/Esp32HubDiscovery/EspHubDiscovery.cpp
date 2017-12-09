@@ -73,11 +73,21 @@ void EspHubDiscovery::loop()
 }
 
 /// Notifi server about device abilities
-/// Must be set befor begin function
+/// Must be set before begin function
 /// @param abilities in json array format (e.g.: "['temp', 'light', 'hum']")
 void EspHubDiscovery::setAbilities(const char *abilities)
 {
 	this->abilities = abilities;
+}
+
+
+/// Manualy set MQTT server 
+/// Must be set before begin function
+/// @param ip IP address or domain name of MQTT server
+/// @param port port number 
+void EspHubDiscovery::setServer(const char *ip, int port)
+{
+	writeServerToEeprom(ip, port);
 }
 
 /// Send one value from sensor to server
@@ -248,8 +258,37 @@ bool EspHubDiscovery::checkServer(const char *ip, int port)
 		}
 		else
 		{
-			Serial.print("failed, rc=");
-			Serial.print(client.state());
+			Serial.printf("failed (return code = %d). ", client.state());
+			switch (client.state())
+			{
+				case -4:
+					Serial.printf("The server did not respond within the keepalive time.\n");
+					break;
+				case -3:
+					Serial.printf("The network connection was broken.\n");
+					break;
+				case -2:
+					Serial.printf("The network conection was broken.\n");
+					break;
+				case -1:
+					Serial.printf("The Client is disconnected cleanly.");
+					break;
+				case 1:
+					Serial.printf("The server doesn't support the requested version of MQTT.\n");
+					break;
+				case 2:
+					Serial.printf("The server rejected the client identifier.\n");
+					break;
+				case 3:
+					Serial.printf("The server was unable to accept the connection.\n");
+					break;
+				case 4:
+					Serial.printf("The username/password were rejected.\n");
+					break;
+				case 5:
+					Serial.printf("The client was not authorized to connect.\n");
+					break;
+			}
 		}
 	}
 

@@ -1,7 +1,18 @@
+#include <MyPubSubClient.h>
+
+//#ifdef MQTT_MAX_PACKET_SIZE
+//#undef MQTT_MAX_PACKET_SIZE
+#define MQTT_MAX_PACKET_SIZE 60
+//#endif
+
+
+
+
 uint64_t chipid;  
 
 void setup() {
 	Serial.begin(115200);
+  PubSubClient();
 }
 
 void loop() {
@@ -11,6 +22,10 @@ void loop() {
 
   int int_chipid = ESP.getEfuseMac();
   Serial.printf("int chip id: %d\n", int_chipid);
+
+  Serial.printf("mem size %d\n", MQTT_MAX_PACKET_SIZE);
 	delay(3000);
+
+  
 
 }

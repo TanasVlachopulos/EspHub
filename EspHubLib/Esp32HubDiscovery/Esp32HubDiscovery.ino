@@ -1,6 +1,7 @@
 #include "EspHubDiscovery.h"
 // #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
 
+#include <WiFi.h>
 #include <Wire.h>
 #include <BH1750.h>
 #include <OneWire.h>
@@ -26,13 +27,10 @@ void setup()
 {
 	Serial.begin(115200);
 
-	// lightMeter.begin(BH1750_CONTINUOUS_HIGH_RES_MODE);
-
-	// enable captive portal
-	// WiFiManager wifiManager;
-	// wifiManager.autoConnect("ESP_HUB_device"); // TODO customize captive portal
+	handleWifiConnection();
 
 	hub.setCallback(callback);
+	hub.setServer("192.168.1.1", 1883);
 	hub.setAbilities("['esp_test']");
 	hub.begin();
 
@@ -94,6 +92,26 @@ void loop()
 	// 	wifiManager.resetSettings();
 	// 	ESP.restart();
 	// }
+}
+
+void handleWifiConnection()
+{
+	WiFi.mode(WIFI_AP_STA);
+	WiFi.beginSmartConfig();
+
+	Serial.printf("Waiting for Smart config setting from mobile app .");
+	while(!WiFi.smartConfigDone())
+	{
+		delay(500);
+		Serial.printf(".");
+	}
+	Serial.printf("\nSmart config received, try to connect .");
+	while(WiFi.status() != WL_CONNECTED)
+	{
+		delay(500);
+		Serial.printf(".");
+	}
+	Serial.printf("\nWiFi connected.\n");
 }
 
 void callback(char *topic, uint8_t *payload, unsigned int length)

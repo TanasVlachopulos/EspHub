@@ -33,6 +33,7 @@ class EspHubDiscovery
 	void begin();
 	void loop();
 	void setAbilities(const char *abilities);
+	void setServer(const char *ip, int port);
 	void sendData(const char *type, const char *value);
 	void sendData(const char *type, const int value);
 	void sendData(const char *type, const float value);
