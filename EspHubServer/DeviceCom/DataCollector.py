@@ -63,13 +63,8 @@ class DataCollector(object):
 		:type message: str
 		:return: Normalized message.
 		"""
-		message = message.replace('[', '')
-		message = message.replace(']', '')
 		message = message.replace(';', ',')
-		message = message.replace(' ', '')
-		message = message.replace('"', '')
-		message = message.replace("'", '')
-		message = message.split(',')
+		message = message.replace("'", '"')
 		return message
 
 	def new_device_callback(self, client, userdata, msg):
@@ -107,9 +102,11 @@ class DataCollector(object):
 				elif self.verify_json(ability_raw_data):
 					abilities = json.loads(ability_raw_data)
 				else:
-					log.warning("Abilities received from device {} are in invalid format.".format(data.get('name')))
+					log.warning("Abilities received from device '{}' are in invalid format.".format(data.get('name')))
 					try:
-						abilities = json.loads(self.normalize_ability_message(ability_raw_data))
+						normalized_data = self.normalize_ability_message(ability_raw_data)
+						print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", normalized_data, " is type of: ", type(normalized_data))
+						abilities = json.loads(normalized_data)
 					except json.JSONDecodeError:
 						log.exception("Cannot parse abilities provided from device {}.".format(data.get('name')))
 
