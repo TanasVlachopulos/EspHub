@@ -1,5 +1,4 @@
 #include "EspHubDiscovery.h"
-// #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
 
 #include <WiFi.h>
 #include <Wire.h>
@@ -7,21 +6,21 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-EspHubDiscovery hub("device_name");
+// preapare reading internal temperature
+#ifdef __cplusplus
+extern "C" {
+#endif
+uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
+uint8_t temprature_sens_read();
 
-// light sensor
-// BH1750 lightMeter(0x23);
+#define MAIN_LOOP_INTERVAL 10000
 
-// Dallas DS18B20 DallasTemperature
-// OneWire oneWire(D3);
-// DallasTemperature DS18B20(&oneWire);
+EspHubDiscovery hub("ESP32_device");
 
 double timer = 0;
-
-// LED and BUTTON demo
-int lastButtonState = HIGH; // init on HIGH -> no click action after start
-double btnPush;
-int ledStatus = LOW;
 
 void setup()
 {
@@ -31,69 +30,24 @@ void setup()
 
 	hub.setCallback(callback);
 	hub.setServer("192.168.1.1", 1883);
-	hub.setAbilities("['esp_test']");
+	hub.setAbilities("['internal_temp', 'hall_sensor']");
 	hub.begin();
 
-	// init Dallas sensor
-	// DS18B20.begin();
-
-	// LED and BUTTON demo
-	// pinMode(D6, OUTPUT); // set demo LED
-	// pinMode(D0, OUTPUT); // set onboard LED
-	// digitalWrite(D0, HIGH); // set onboard LED off
-	// pinMode(D7, INPUT_PULLUP); // set demo button
-	// btnPush = millis(); // prevent accidental button press after start
 }
 
 void loop()
 {
 	hub.loop();
-	if (millis() - timer > 7000)
+	if (millis() - timer > MAIN_LOOP_INTERVAL)
 	{
-		// hub.sendData("light", lightMeter.readLightLevel());
-		// hub.sendData("DS18B20", getTemperature());
-		hub.sendData("esp_test", "30");
+		hub.sendData("internal_temp", getInternalTemperature());
+		hub.sendData("hall_sensor", hallRead());
 		timer = millis();
 	}
 
-	// double pressTime = detectBtn(D7);
-
-	// short button press under 5s
-	// if (pressTime > 0 && pressTime < 5000)
-	// {
-	// 	// switch LED status
-	// 	if (ledStatus == LOW)
-	// 	{
-	// 		ledStatus = HIGH;
-	// 		digitalWrite(D6, HIGH);
-	// 		hub.sendData("switch", "on");
-	// 	}
-	// 	else
-	// 	{
-	// 		ledStatus = LOW;
-	// 		digitalWrite(D6, LOW);
-	// 		hub.sendData("switch", "off");
-	// 	}
-	// }
-	// long button press more than 5s
-	// else if (pressTime >= 5000)
-	// {
-	// 	// blink onboard LED
-	// 	for (int i = 0; i < 3; i++)
-	// 	{
-	// 		digitalWrite(D0, LOW);
-	// 		delay(150);
-	// 		digitalWrite(D0, HIGH);
-	// 		delay(150);
-	// 	}
-	// 	// reset device
-	// 	hub.clearEeprom();
-	// 	WiFiManager wifiManager;
-	// 	wifiManager.resetSettings();
-	// 	ESP.restart();
-	// }
 }
 
+/// Connect to WiFi network using Smart Config
 void handleWifiConnection()
 {
 	WiFi.mode(WIFI_AP_STA);
@@ -140,34 +94,8 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
 	}
 }
 
-// /// Detect button long press
-// long detectBtn(int btnPin)
-// {
-// 	long pressTime = 0;
-// 	long buttonState = digitalRead(btnPin);
-// 	if (buttonState != lastButtonState)
-// 	{
-// 		if (buttonState == LOW)
-// 		{
-// 			btnPush = millis();
-// 		}
-// 		else
-// 		{
-// 			pressTime = millis() - btnPush;
-// 		}
-// 		delay(50);
-// 	}
-// 	lastButtonState = buttonState;
-// 	return pressTime;
-// }
-
-// /// Read temperature from Dallas sensor
-// float getTemperature() {
-//   float temp;
-//   do {
-//     DS18B20.requestTemperatures();
-//     temp = DS18B20.getTempCByIndex(0);
-//     delay(100);
-//   } while (temp == 85.0 || temp == (-127.0));
-//   return temp;
-// }
+/// Read internal temperature of ESP core
+float getInternalTemperature()
+{
+	return (temprature_sens_read() - 32) / 1.8;
+}
