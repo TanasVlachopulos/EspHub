@@ -99,6 +99,7 @@ def update_provided_func(session, device_id, function):
 	# This function was part of old DBA class, but is unnecessary
 	raise NotImplementedError
 
+
 def get_device_ability(session, device_id, ability_name):
 	"""
 	Get ability with specific name for given device.
@@ -108,6 +109,7 @@ def get_device_ability(session, device_id, ability_name):
 	:return: Single DAO ability object.
 	"""
 	return session.query(Ability).filter(and_(Ability.name == ability_name, Ability.device_id == device_id)).first()
+
 
 def get_ability_by_id(session, ability_id):
 	"""
@@ -170,6 +172,7 @@ def insert_telemetry(session, telemetry):
 		db_telemetry.mac = telemetry.mac
 		db_telemetry.ssid = telemetry.ssid
 		db_telemetry.hostname = telemetry.hostname
+		session.expunge(telemetry)  # new telemetry record must be expunged from session otherwise they are inserted into db
 		log.debug("Updating telemetry: {}".format(db_telemetry))
 	else:
 		session.add(telemetry)

@@ -4,7 +4,7 @@ function updateDeviceStatus(apiUrl, updateInterval) {
         if (!$.isEmptyObject(result)) {
             // console.log(result);
 
-            var resultTime = new Date(result['_time'] * 1000);
+            var resultTime = new Date(result['time']);
             var formatedTime = resultTime.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");
 
             $('#rssi').text(result['rssi']);

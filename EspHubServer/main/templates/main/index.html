@@ -13,6 +13,7 @@
     {% load static %}
     <script type="text/javascript" src="{% static 'main/js/checkDeviceState.js' %}"></script>
     <script type="text/javascript">
+        var connected = true;
         $(document).ready(checkDeviceState("{{ devices_json|escapejs }}", "/api/telemetry/", {{ time_to_live }}));
     </script>
 {% endblock %}

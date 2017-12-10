@@ -6,7 +6,7 @@ function checkDeviceState(devicesJson, apiUrl, timeLimit) {
     devices.forEach(function (item, index) {
         $.getJSON(apiUrl + item, function (result) {
             if (!$.isEmptyObject(result)) {
-                var resultTime = new Date(result['_time'] * 1000);
+                var resultTime = new Date(result['time']);
                 var now = new Date();
 
                 // if telemetry is older then timeLimit mark as offline
@@ -20,6 +20,14 @@ function checkDeviceState(devicesJson, apiUrl, timeLimit) {
             else {
                 $('#state-badge-' + item).html(offlineBadge);
             }
+        }).fail(function () {
+            // show disconnect dialog
+            if (connected === true) {
+                Materialize.toast("Network connection lost", 10000, '', function () {connected = true});
+                connected = false;
+            }
+            // make device offline
+            $('#state-badge-' + item).html(offlineBadge);
         })
     });
 
