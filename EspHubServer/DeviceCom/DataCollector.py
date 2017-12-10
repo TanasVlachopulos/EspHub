@@ -105,10 +105,9 @@ class DataCollector(object):
 					log.warning("Abilities received from device '{}' are in invalid format.".format(data.get('name')))
 					try:
 						normalized_data = self.normalize_ability_message(ability_raw_data)
-						print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", normalized_data, " is type of: ", type(normalized_data))
 						abilities = json.loads(normalized_data)
-					except json.JSONDecodeError:
-						log.exception("Cannot parse abilities provided from device {}.".format(data.get('name')))
+					except (json.decoder.JSONDecodeError, ValueError):
+						log.error("Cannot parse abilities provided by device '{}'.".format(data.get('name')))
 
 				# add device to waiting list
 				if abilities:
