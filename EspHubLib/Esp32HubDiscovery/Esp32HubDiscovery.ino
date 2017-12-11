@@ -26,6 +26,13 @@ void setup()
 {
 	Serial.begin(115200);
 
+	EEPROM.begin(10);
+	for (int i = 0; i < 10; i++)
+	{
+		Serial.print((char)EEPROM.read(i));
+	}
+	EEPROM.end();
+
 	handleWifiConnection();
 
 	hub.setCallback(callback);

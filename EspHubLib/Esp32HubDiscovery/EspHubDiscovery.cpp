@@ -16,6 +16,18 @@ EspHubDiscovery::EspHubDiscovery(const char *deviceName)
 {
 	custom_callback = NULL;
 	this->device_name = deviceName;
+
+	// init SPI flash memory
+	if (!SPIFFS.begin())
+	{
+		Serial.println("ESP_HUB: Initiating of SPI flash memory failed. Trying to format memory.");
+		if (!SPIFFS.begin(true))
+		{
+			Serial.println("ESP_HUB: Initiating and formationg of SPI flash memory failed.");
+			return;
+		}
+	}
+	Serial.println("ESP_HUB: Initiating of SPI successfull.");
 }
 
 /// Initiating client function
@@ -80,11 +92,10 @@ void EspHubDiscovery::setAbilities(const char *abilities)
 	this->abilities = abilities;
 }
 
-
-/// Manualy set MQTT server 
+/// Manualy set MQTT server
 /// Must be set before begin function
 /// @param ip IP address or domain name of MQTT server
-/// @param port port number 
+/// @param port port number
 void EspHubDiscovery::setServer(const char *ip, int port)
 {
 	writeServerToEeprom(ip, port);
@@ -261,33 +272,33 @@ bool EspHubDiscovery::checkServer(const char *ip, int port)
 			Serial.printf("failed (return code = %d). ", client.state());
 			switch (client.state())
 			{
-				case -4:
-					Serial.printf("The server did not respond within the keepalive time.\n");
-					break;
-				case -3:
-					Serial.printf("The network connection was broken.\n");
-					break;
-				case -2:
-					Serial.printf("The network conection was broken.\n");
-					break;
-				case -1:
-					Serial.printf("The Client is disconnected cleanly.");
-					break;
-				case 1:
-					Serial.printf("The server doesn't support the requested version of MQTT.\n");
-					break;
-				case 2:
-					Serial.printf("The server rejected the client identifier.\n");
-					break;
-				case 3:
-					Serial.printf("The server was unable to accept the connection.\n");
-					break;
-				case 4:
-					Serial.printf("The username/password were rejected.\n");
-					break;
-				case 5:
-					Serial.printf("The client was not authorized to connect.\n");
-					break;
+			case -4:
+				Serial.printf("The server did not respond within the keepalive time.\n");
+				break;
+			case -3:
+				Serial.printf("The network connection was broken.\n");
+				break;
+			case -2:
+				Serial.printf("The network conection was broken.\n");
+				break;
+			case -1:
+				Serial.printf("The Client is disconnected cleanly.");
+				break;
+			case 1:
+				Serial.printf("The server doesn't support the requested version of MQTT.\n");
+				break;
+			case 2:
+				Serial.printf("The server rejected the client identifier.\n");
+				break;
+			case 3:
+				Serial.printf("The server was unable to accept the connection.\n");
+				break;
+			case 4:
+				Serial.printf("The username/password were rejected.\n");
+				break;
+			case 5:
+				Serial.printf("The client was not authorized to connect.\n");
+				break;
 			}
 		}
 	}
@@ -368,17 +379,23 @@ void EspHubDiscovery::generateHelloMsg(char *buff, int buff_size)
 bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
 {
 	Serial.println("ESP_HUB: Read from EEPROM");
-	EEPROM.begin(EEPROM_SIZE); // init EEPROM
+	// EEPROM.begin(EEPROM_SIZE); // init EEPROM
 
 	char buff[EEPROM_SIZE] = {0};
 
-	for (int i = 0; i < EEPROM_SIZE; i++) // read from memory
-	{
-		buff[i] = EEPROM.read(i);
-	}
+	// for (int i = 0; i < EEPROM_SIZE; i++) // read from memory
+	// {
+	// 	buff[i] = EEPROM.read(i);
+	// }
 
-	if (strlen(buff) == 0) // empty memory
+	// if (strlen(buff) == 0) // empty memory
+	// {
+	// 	return false;
+	// }
+
+	if (!readFile(SERVER_CONF, buff))
 	{
+		Serial.println("ESP_HUB: Fail. Cannot read server config file.");
 		return false;
 	}
 
@@ -387,13 +404,14 @@ bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
 
 	if (!json.success()) // check validity of JSON
 	{
+		Serial.println("ESP_HUB: Fail. Cannot parse JSON from memory.");
 		return false;
 	}
 
 	strncpy(ip, json["ip"].asString(), strlen(json["ip"].asString()));
 	port = json["port"].as<int>();
 
-	EEPROM.end();
+	// EEPROM.end();
 
 	return true;
 }
@@ -403,8 +421,8 @@ bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
 /// @param port server port
 void EspHubDiscovery::writeServerToEeprom(const char *ip, int port)
 {
-	Serial.println("ESP_HUB: Write to EEPROM");
-	EEPROM.begin(EEPROM_SIZE);
+	Serial.println("ESP_HUB: Write to server config into flash.");
+	// EEPROM.begin(EEPROM_SIZE);
 
 	StaticJsonBuffer<EEPROM_SIZE + 8 + (16 * EEPROM_VARIABLES)> json_buffer; // estimated JSON object size, calculation from https://github.com/bblanchon/ArduinoJson/wiki/Memory-model
 	JsonObject &json = json_buffer.createObject();
@@ -415,12 +433,20 @@ void EspHubDiscovery::writeServerToEeprom(const char *ip, int port)
 	char buff[EEPROM_SIZE] = {0};
 	json.printTo(buff, EEPROM_SIZE);
 
-	for (int i = 0; i < EEPROM_SIZE; i++) // writeto EEPROM
+	// for (int i = 0; i < EEPROM_SIZE; i++) // writeto EEPROM
+	// {
+	// 	EEPROM.write(i, buff[i]);
+	// }
+	if (writeFile(SERVER_CONF, buff))
 	{
-		EEPROM.write(i, buff[i]);
+		Serial.println("ESP_HUB: Successfully write config into flash.");
+	}
+	else
+	{
+		Serial.println("ESP_HUB: Fail to write config file into flash.");
 	}
 
-	EEPROM.end();
+	// EEPROM.end();
 }
 
 /// Callback for command topic from the server
@@ -476,4 +502,46 @@ void EspHubDiscovery::sendTelemetryData()
 
 	client.publish(topic.c_str(), msg.c_str());
 	Serial.println("ESP_HUB: Sending telemetry ...");
+}
+
+bool EspHubDiscovery::writeFile(const char *path, const char *content)
+{
+	File file = SPIFFS.open(path, FILE_WRITE);
+	if (!file)
+	{
+		Serial.println("ESP_HUB: Cannot open file for writing");
+		return false;
+	}
+
+	if (file.write((uint8_t *)content, sizeof(content)) > 0)
+	{
+		Serial.println("ESP_HUB: File writed successfully.");
+		return true;
+	}
+	else
+	{
+		Serial.println("ESP_HUB: File cannot be writed. Fail.");
+		return false;
+	}
+}
+
+bool EspHubDiscovery::readFile(const char *path, char *content)
+{
+	File file = SPIFFS.open(path);
+	if (!file || file.isDirectory())
+	{
+		Serial.println("ESP_HUB: Failed to open file for reading");
+		return false;
+	}
+
+	if (file.read((uint8_t *)content, sizeof(content)) > 0)
+	{
+		Serial.println("ESP_HUB: File readed successfully.");
+		return true;
+	}
+	else
+	{
+		Serial.println("ESP_HUB: File cannot be read. Fail.");
+		return false;
+	}
 }

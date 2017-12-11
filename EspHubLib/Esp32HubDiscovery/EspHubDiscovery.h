@@ -8,17 +8,21 @@
 // #include <ESP8266WebServer.h>
 
 #include <EEPROM.h>
+#include "FS.h"
+#include "SPIFFS.h"
 #include <WiFiUdp.h>
 #include <ArduinoJson.h>
 #include <MyPubSubClient.h>
 
-#define EEPROM_SIZE 35			 // size of aloceted EEPROM memory
-#define EEPROM_VARIABLES 2		 // count of JSON variables stored to EEPROM
-#define JSON_SIZE 400			 // standard size of JSON buffer
-#define UDP_MSG_SIZE 100		 // size of input UDP discovery broadcast
-#define UDP_LOCAL_PORT 11114	 // UDP discovery port
-#define DISCOVERY_INTERVAL 15000 // server discovery timeout
-#define TELEMETRY_INTERVAL 30000 // sending telemetry data interval
+#define EEPROM_SIZE 35			   // size of aloceted EEPROM memory
+#define EEPROM_VARIABLES 2		   // count of JSON variables stored to EEPROM
+#define JSON_SIZE 400			   // standard size of JSON buffer
+#define UDP_MSG_SIZE 100		   // size of input UDP discovery broadcast
+#define UDP_LOCAL_PORT 11114	   // UDP discovery port
+#define DISCOVERY_INTERVAL 15000   // server discovery timeout
+#define TELEMETRY_INTERVAL 30000   // sending telemetry data interval
+#define SERVER_CONF "/server.json" // server config File
+#define WIFI_CONF "/wifi.json"	 // wifi config File
 
 // topic names
 #define MAIN_TOPIC "esp_hub/device/"
@@ -50,6 +54,10 @@ class EspHubDiscovery
 	void static writeServerToEeprom(const char *ip, int port);
 	void static internalCallback(char *topic, uint8_t *payload, unsigned int length);
 	void sendTelemetryData();
+	void static writeWifiSetting(String ssid, String passwd);
+	void static readWifiSetting();
+	bool static writeFile(const char *path, const char *content);
+	bool static readFile(const char *path, char *content);
 	const char *abilities;
 	const char *device_name;
 };
