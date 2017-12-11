@@ -2,9 +2,11 @@
 
 void setup() {
   Serial.begin(115200);
+ 
 
   //Init WiFi as Station, start SmartConfig
   WiFi.mode(WIFI_AP_STA);
+  //Serial.println(WiFi.getAutoConnect());
   WiFi.beginSmartConfig();
 
   //Wait for SmartConfig packet from mobile
@@ -16,6 +18,8 @@ void setup() {
 
   Serial.println("");
   Serial.println("SmartConfig received.");
+//  Serial.printf("SSID: %s, Passwd: %s\n", WiFi.SSID(), WiFi.psk());
+  
 
   //Wait for WiFi to connect to AP
   Serial.println("Waiting for WiFi");
@@ -23,6 +27,10 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
+
+  Serial.println(WiFi.SSID());
+  Serial.println(WiFi.BSSIDstr());
+  Serial.println(WiFi.psk()); 
 
   Serial.println("WiFi Connected.");
 
@@ -33,6 +41,6 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   Serial.println(WiFi.localIP());
-  delay(100);
+  delay(10000);
 
 }
