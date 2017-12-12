@@ -1,7 +1,7 @@
 import configparser
-import os
 import threading
 import select
+import os
 import paho.mqtt.client as mqtt
 import socket
 import json
