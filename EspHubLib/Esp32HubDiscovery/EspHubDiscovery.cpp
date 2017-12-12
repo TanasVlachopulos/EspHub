@@ -430,15 +430,29 @@ void EspHubDiscovery::writeServerToEeprom(const char *ip, int port)
 /// @param length of MQTT message
 void EspHubDiscovery::internalCallback(char *topic, uint8_t *payload, unsigned int length)
 {
-	String local_topic = MAIN_TOPIC;
-	local_topic += (int)ESP.getEfuseMac();
-	local_topic += "/";
+	String topic_base = MAIN_TOPIC;
+	topic_base += (int)ESP.getEfuseMac();
+	topic_base += "/";
+
+	String telemetry_topic = topic_base;
+	telemetry_topic += TELEMETRY_TOPIC;
+
+	String data_topic = topic_base;
+	data_topic += DATA_TOPIC;
+
+	String local_topic = topic_base;
 	local_topic += CMD_TOPIC;
 
+	// handle internal commands from server
 	if (strcmp(topic, local_topic.c_str()) == 0)
 	{
 		Serial.println("ESP_HUB: command");
 		// TODO implement command listening from server
+	}
+	// mute receiving loopback messages from Data and Telemetry topic
+	if (strcmp(topic, telemetry_topic.c_str()) == 0 || strcmp(topic, data_topic.c_str()) == 0)
+	{
+		return;
 	}
 	else if (custom_callback != NULL)
 	{

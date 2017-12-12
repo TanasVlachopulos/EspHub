@@ -6,6 +6,11 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+#include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
+
+SSD1306  display(0x3c, 5, 4);
+
+
 // preapare reading internal temperature
 #ifdef __cplusplus
 extern "C" {
@@ -28,11 +33,15 @@ void setup()
 
 	handleWifiConnection();
 
+	// init internal display
+	display.init();
+	display.setContrast(255);
+	display.flipScreenVertically();
+
 	hub.setCallback(callback);
 	hub.setServer("192.168.1.1", 1883);
 	hub.setAbilities("['internal_temp', 'hall_sensor']");
 	hub.begin();
-
 }
 
 void loop()
@@ -44,7 +53,6 @@ void loop()
 		hub.sendData("hall_sensor", hallRead());
 		timer = millis();
 	}
-
 }
 
 /// Connect to WiFi network using Smart Config
@@ -54,13 +62,13 @@ void handleWifiConnection()
 	WiFi.beginSmartConfig();
 
 	Serial.printf("Waiting for Smart config setting from mobile app .");
-	while(!WiFi.smartConfigDone())
+	while (!WiFi.smartConfigDone())
 	{
 		delay(500);
 		Serial.printf(".");
 	}
 	Serial.printf("\nSmart config received, try to connect .");
-	while(WiFi.status() != WL_CONNECTED)
+	while (WiFi.status() != WL_CONNECTED)
 	{
 		delay(500);
 		Serial.printf(".");
@@ -70,28 +78,27 @@ void handleWifiConnection()
 
 void callback(char *topic, uint8_t *payload, unsigned int length)
 {
-	Serial.println(topic);
-	StaticJsonBuffer<300> jsonBuffer;
-	JsonObject &root = jsonBuffer.parseObject((char *)payload);
+	Serial.println("callback");
+	// Serial.println(topic);
+	// Serial.println((char *)payload);
+	Serial.println(length);
 
-	if (!root.success())
-	{
-		Serial.println("JSON parsing fail!");
-		return;
-	}
+	char *buff;
+	buff = (char *)malloc(length + 1);
+	bzero(buff, length + 1);
+	memcpy(buff, payload, length);
 
-	if (strcmp(topic, "esp_hub/device/8394748/data") == 0 && strcmp(root["value"], "on") == 0)
-	{
-		Serial.println("Switch ON");
-		// digitalWrite(D6, HIGH);
-		// ledStatus = HIGH;
-	}
-	else if (strcmp(topic, "esp_hub/device/8394748/data") == 0 && strcmp(root["value"], "off") == 0)
-	{
-		Serial.println("Switch OFF");
-		// digitalWrite(D6, LOW);
-		// ledStatus = LOW;
-	}
+	// Serial.println(buff);
+
+	display.drawXbm(32, 0, 64, 64, buff);
+	display.display();
+
+	// for (int i = 0; i < length; i++)
+	// {
+	// 	Serial.print((int)buff[i]);
+	// }
+	// Serial.println();
+	free(buff);
 }
 
 /// Read internal temperature of ESP core
