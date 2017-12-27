@@ -82,13 +82,13 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
 	// Serial.println(topic);
 	// Serial.println((char *)payload);
 	Serial.println(length);
+	display.clear();
 
 	char *buff;
 	buff = (char *)malloc(length + 1);
 	bzero(buff, length + 1);
 	memcpy(buff, payload, length);
 
-	// Serial.println(buff);
 
 	display.drawXbm(32, 0, 64, 64, buff);
 	display.display();
