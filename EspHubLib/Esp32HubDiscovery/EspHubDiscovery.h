@@ -11,6 +11,7 @@
 #include <WiFiUdp.h>
 #include <ArduinoJson.h>
 #include <MyPubSubClient.h>
+#include <Preferences.h>
 
 #define EEPROM_SIZE 35			 // size of aloceted EEPROM memory
 #define EEPROM_VARIABLES 2		 // count of JSON variables stored to EEPROM

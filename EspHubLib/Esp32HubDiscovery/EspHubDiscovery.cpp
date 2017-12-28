@@ -1,5 +1,7 @@
 #include "EspHubDiscovery.h"
 
+Preferences preferences;
+
 char server_ip[16] = {0};
 int server_port = 1883; // server port - default 1883
 long last_time = 0;		// time measurement variable
@@ -166,12 +168,9 @@ void EspHubDiscovery::sendJson(const char *topic_part, const char *json_str)
 /// Clear EEPROM memory
 void EspHubDiscovery::clearEeprom()
 {
-	EEPROM.begin(EEPROM_SIZE);
-	for (int i = 0; i < EEPROM_SIZE; i++)
-	{
-		EEPROM.write(i, 0);
-	}
-	EEPROM.end();
+	preferences.begin("EspHub");
+	preferences.clear();
+	preferences.end();
 }
 
 void EspHubDiscovery::setCallback(std::function<void(char *, uint8_t *, unsigned int)> callback)
@@ -368,34 +367,16 @@ void EspHubDiscovery::generateHelloMsg(char *buff, int buff_size)
 bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
 {
 	Serial.println("ESP_HUB: Read from EEPROM");
-	EEPROM.begin(EEPROM_SIZE); // init EEPROM
 
-	char buff[EEPROM_SIZE] = {0};
+	preferences.begin("EspHub");
 
-	for (int i = 0; i < EEPROM_SIZE; i++) // read from memory
-	{
-		buff[i] = EEPROM.read(i);
-	}
+	String stored_ip = preferences.getString("ip");
+	strcpy(ip, stored_ip.c_str());
+	port = preferences.getInt("port");
 
-	if (strlen(buff) == 0) // empty memory
-	{
-		return false;
-	}
+	preferences.end();
 
-	StaticJsonBuffer<EEPROM_SIZE + 8 + (16 * EEPROM_VARIABLES)> json_buffer; // estimated JSON object size, calculation from https://github.com/bblanchon/ArduinoJson/wiki/Memory-model
-	JsonObject &json = json_buffer.parseObject((char *)buff);
-
-	if (!json.success()) // check validity of JSON
-	{
-		return false;
-	}
-
-	strncpy(ip, json["ip"].asString(), strlen(json["ip"].asString()));
-	port = json["port"].as<int>();
-
-	EEPROM.end();
-
-	return true;
+	return (ip == 0) ? false : true;
 }
 
 /// Write server credentials to EEPROM
@@ -404,23 +385,12 @@ bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
 void EspHubDiscovery::writeServerToEeprom(const char *ip, int port)
 {
 	Serial.println("ESP_HUB: Write to EEPROM");
-	EEPROM.begin(EEPROM_SIZE);
+	preferences.begin("EspHub");
 
-	StaticJsonBuffer<EEPROM_SIZE + 8 + (16 * EEPROM_VARIABLES)> json_buffer; // estimated JSON object size, calculation from https://github.com/bblanchon/ArduinoJson/wiki/Memory-model
-	JsonObject &json = json_buffer.createObject();
+	preferences.putString("ip", ip);
+	preferences.putInt("port", port);
 
-	json["ip"] = ip;
-	json["port"] = port;
-
-	char buff[EEPROM_SIZE] = {0};
-	json.printTo(buff, EEPROM_SIZE);
-
-	for (int i = 0; i < EEPROM_SIZE; i++) // writeto EEPROM
-	{
-		EEPROM.write(i, buff[i]);
-	}
-
-	EEPROM.end();
+	preferences.end();
 }
 
 /// Callback for command topic from the server

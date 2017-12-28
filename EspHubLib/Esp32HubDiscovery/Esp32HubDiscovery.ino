@@ -1,10 +1,10 @@
 #include "EspHubDiscovery.h"
 
 #include <WiFi.h>
-#include <Wire.h>
-#include <BH1750.h>
-#include <OneWire.h>
-#include <DallasTemperature.h>
+// #include <Wire.h>
+// #include <BH1750.h>
+// #include <OneWire.h>
+// #include <DallasTemperature.h>
 
 #include "SSD1306.h" // alias for `#include "SSD1306Wire.h"`
 
