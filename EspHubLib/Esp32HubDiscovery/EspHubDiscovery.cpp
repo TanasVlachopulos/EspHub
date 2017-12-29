@@ -211,16 +211,16 @@ void EspHubDiscovery::serverDiscovery()
 				continue;
 			}
 
-			Serial.printf("ESP_HUB: Candidate server: %s, IP: %s, port: %d\n", json["name"].asString(), json["ip"].asString(), json["port"].as<int>());
+			Serial.printf("ESP_HUB: Candidate server: %s, IP: %s, port: %d\n", json["name"].as<char*>(), json["ip"].as<char*>(), json["port"].as<int>());
 
 			long now = millis();
 			if (now - last_time > DISCOVERY_INTERVAL) // discovery validation interval
 			{
 				// copy IP and port from UDP discovery to global variable - to verify "accept" msg from server
-				strncpy(server_ip, json["ip"].asString(), strlen(json["ip"].asString()));
+				strncpy(server_ip, json["ip"].as<char*>(), strlen(json["ip"].as<char*>()));
 				server_port = json["port"].as<int>();
 
-				this->checkServer(json["ip"].asString(), json["port"].as<int>());
+				this->checkServer(json["ip"].as<char*>(), json["port"].as<int>());
 			}
 		}
 
@@ -329,12 +329,12 @@ void EspHubDiscovery::checkServerCallback(char *topic, byte *payload, unsigned i
 		}
 
 		// check server IP and port with data from UDP broadcast or data from EEPROM
-		if (strcmp(json["ip"].asString(), server_ip) == 0 && json["port"].as<int>() == server_port)
+		if (strcmp(json["ip"].as<char*>(), server_ip) == 0 && json["port"].as<int>() == server_port)
 		{
 			Serial.println("ESP_HUB: Server validated");
 
 			// write to EEPROM
-			writeServerToEeprom(json["ip"].asString(), json["port"].as<int>());
+			writeServerToEeprom(json["ip"].as<char*>(), json["port"].as<int>());
 
 			verified_to_server = true; // set global property verified_to_server
 		}
