@@ -11,6 +11,7 @@
 #include <WiFiUdp.h>
 #include <ArduinoJson.h>
 #include <MyPubSubClient.h>
+#include <WiFi.h>
 #include <Preferences.h>
 
 #define EEPROM_SIZE 35			 // size of aloceted EEPROM memory
@@ -41,6 +42,7 @@ class EspHubDiscovery
 	void sendJson(const char *topic_part, const char *json_str);
 	void clearEeprom();
 	void setCallback(std::function<void(char *, uint8_t *, unsigned int)> callback);
+	void handleWifiConnection();
 
   private:
 	void serverDiscovery();

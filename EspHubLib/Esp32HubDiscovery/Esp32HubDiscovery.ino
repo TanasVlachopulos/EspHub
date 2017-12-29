@@ -10,7 +10,6 @@
 
 SSD1306  display(0x3c, 5, 4);
 
-
 // preapare reading internal temperature
 #ifdef __cplusplus
 extern "C" {
@@ -31,13 +30,12 @@ void setup()
 {
 	Serial.begin(115200);
 
-	handleWifiConnection();
-
 	// init internal display
 	display.init();
 	display.setContrast(255);
 	display.flipScreenVertically();
 
+	hub.handleWifiConnection();
 	hub.setCallback(callback);
 	hub.setServer("192.168.1.1", 1883);
 	hub.setAbilities("['internal_temp', 'hall_sensor']");
@@ -53,27 +51,6 @@ void loop()
 		hub.sendData("hall_sensor", hallRead());
 		timer = millis();
 	}
-}
-
-/// Connect to WiFi network using Smart Config
-void handleWifiConnection()
-{
-	WiFi.mode(WIFI_AP_STA);
-	WiFi.beginSmartConfig();
-
-	Serial.printf("Waiting for Smart config setting from mobile app .");
-	while (!WiFi.smartConfigDone())
-	{
-		delay(500);
-		Serial.printf(".");
-	}
-	Serial.printf("\nSmart config received, try to connect .");
-	while (WiFi.status() != WL_CONNECTED)
-	{
-		delay(500);
-		Serial.printf(".");
-	}
-	Serial.printf("\nWiFi connected.\n");
 }
 
 void callback(char *topic, uint8_t *payload, unsigned int length)

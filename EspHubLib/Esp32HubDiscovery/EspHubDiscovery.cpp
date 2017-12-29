@@ -461,3 +461,58 @@ void EspHubDiscovery::sendTelemetryData()
 	client.publish(topic.c_str(), msg.c_str());
 	Serial.println("ESP_HUB: Sending telemetry ...");
 }
+
+/// Handle connection to WiFi network
+/// Use stored credentials for connection to last known WiFi network.
+/// If credential are invalid, network is unrecheable or connection cannot be established activate Smart config.
+/// Smart config wait for response from application https://play.google.com/store/apps/details?id=com.cmmakerclub.iot.esptouch
+/// If smart config successflully esptablish connection credentials are stored into memory
+void EspHubDiscovery::handleWifiConnection()
+{
+	WiFi.mode(WIFI_AP_STA);
+	preferences.begin("EspHub");
+
+	String ssid = preferences.getString("ssid");
+	String password = preferences.getString("psk");
+
+	Serial.println("Try to connect with stored credentials.");
+	WiFi.begin(ssid.c_str(), password.c_str());
+	double startTime = millis();
+	while((millis() < startTime + 20000) && (WiFi.status() != WL_CONNECTED))
+	{
+		delay(500);
+		Serial.print(".");
+	}
+
+	// device is successfully connected
+	if (WiFi.status() == WL_CONNECTED)
+	{
+		Serial.println("Successfully connected with stored credentials.");
+		preferences.end();
+		return;
+	} 
+	
+	Serial.println("Cannot connect with stored credentials.");
+	Serial.println("Starting smart config.");
+
+	WiFi.beginSmartConfig();
+
+	Serial.printf("Waiting for Smart config setting from mobile app .");
+	while (!WiFi.smartConfigDone())
+	{
+		delay(500);
+		Serial.printf(".");
+	}
+	Serial.printf("\nSmart config received, try to connect .");
+	while (WiFi.status() != WL_CONNECTED)
+	{
+		delay(500);
+		Serial.printf(".");
+	}
+	Serial.printf("\nWiFi connected.\n");
+
+	preferences.putString("ssid", WiFi.SSID());
+	preferences.putString("psk", WiFi.psk());
+
+	preferences.end();
+}
