@@ -4,6 +4,7 @@ Refactored
 """
 from DataAccess import DAO, DAC, DBA
 from DeviceCom.MessageHandler import MessageHandler
+from DeviceCom.MqttApi import MqttApi
 from Config.Config import Config
 from Tools.Log import Log
 import json
@@ -16,9 +17,12 @@ log = Log.get_logger()
 class DataCollector(object):
 	def __init__(self):
 
+		# registered topics
 		self.topics = {"esp_hub/device/hello": self.new_device_callback,
 					   "esp_hub/device/+/telemetry": self.telemetry_callback,
-					   "esp_hub/device/+/data": self.data_callback}
+					   "esp_hub/device/+/data": self.data_callback,
+					   "esp_hub/api/request/+": self.api_callback,
+					   }
 
 		self.mqtt = MessageHandler(conf.get('mqtt', 'ip'), conf.getint('mqtt', 'port'))
 		self.mqtt.register_topics(self.topics)
@@ -159,7 +163,7 @@ class DataCollector(object):
 				# check if device is in database
 				if device and device.status == device.VALIDATED:
 					record = DAO.Record(device=device,
-										time=datetime.now(), # this line is important, default time is time of module DAO initialization
+										time=datetime.now(),  # this line is important, default time is time of module DAO initialization
 										name=data.get('type'),
 										value=data.get('value'))
 					DBA.insert_record(db, record)
@@ -167,3 +171,18 @@ class DataCollector(object):
 					log.warning("Device with ID '{}' is not in database of validated devices. Cannot store record.".format(device_id))
 		else:
 			log.error("Message from device with ID '{}' is in incomplete format.".format(device_id))
+
+	def api_callback(self, client, userdata, msg):
+		"""
+		Handle API request over MQTT.
+		Topic: "esp_hub/api/request/+"
+		Commands: list_devices
+		"""
+		data = msg.payload.decode('utf-8')
+
+		part = [i for i in msg.topic.split('/')]
+		if len(part) > 3:
+			request_id = part[part.index("request") + 1]
+			MqttApi(data, request_id)
+		else:
+			MqttApi(data)

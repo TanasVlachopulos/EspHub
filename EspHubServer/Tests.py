@@ -9,20 +9,29 @@ from datetime import datetime
 
 if __name__ == '__main__':
 	conf = Config.get_config()
-	section = conf.items('mqtt')
-	print(section)
+	# section = conf.items('mqtt')
+	# print(section)
+
+	with DAC.keep_session() as db:
+		devices = db.query(DAO.Device, DAO.Ability).join(DAO.Device.abilities).filter(DAO.Ability.category == DAO.Ability.CATEGORY_DISPLAY).all()
+		response = []
+		for device, ability in devices:
+			# print(device.serialize(), ability.serialize())
+			response.append({'id': device.id, 'name': device.name, 'ability_name': ability.name, 'ability_user_name': ability.user_name, 'ability_description': ability.description})
+
+		print(response)
 
 	# with DAC.keep_session() as db:
 	# 	db.add(DAO.Record(name='switch', value='on', device_id='828530', time=datetime.now()))
 
-	with DAC.keep_session() as db:
-		# record = db.query(DAO.Record).get(375)
-		device = DBA.get_device(db, '383646ee-fe07-4660-940e-51f5b33a6cf6')
-		print(device)
-
-		records = DBA.get_record_from_device(db, '828530', 'switch', limit=5)
-		for record in records:
-			print(record.id, record.time)
+	# with DAC.keep_session() as db:
+	# 	# record = db.query(DAO.Record).get(375)
+	# 	device = DBA.get_device(db, '383646ee-fe07-4660-940e-51f5b33a6cf6')
+	# 	print(device)
+	#
+	# 	records = DBA.get_record_from_device(db, '828530', 'switch', limit=5)
+	# 	for record in records:
+	# 		print(record.id, record.time)
 
 
 # with DAC.keep_session() as dbs:
