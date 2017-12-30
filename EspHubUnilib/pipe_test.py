@@ -11,8 +11,12 @@ class Descriptor(object):
 		return self.fd
 
 if __name__ == '__main__':
-	if not os.path.exists(pipename):
-		os.mkfifo(pipename)
+	try:
+		if not os.path.exists(pipename):
+			os.mkfifo(pipename)
+	except AttributeError as e:
+		print("cannot crate pipe")
+
 
 	# pipein = open(pipename, 'r')
 	pipein = os.open(pipename, os.O_RDONLY)

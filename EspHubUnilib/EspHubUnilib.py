@@ -52,6 +52,8 @@ class EspHubUnilib(object):
 			self.server_discovery()
 
 		self._create_pipes()
+
+
 		self.log.debug("Starting mainloop.")
 		while self.validated:
 			time.sleep(3)
