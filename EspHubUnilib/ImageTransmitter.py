@@ -16,7 +16,7 @@ class ImageTransmitter(object):
 	BASE_REQUEST_TOPIC = "esp_hub/api/request/"
 	BASE_RESPONSE_TOPIC = "esp_hub/api/response/"
 
-	def __init__(self, server_address, port):
+	def __init__(self, server_address, port=1883):
 		self.mqtt = MqttHandler(server_address, port)
 		self.request_pool = set()
 		self.response_pool = dict()
@@ -46,19 +46,39 @@ class ImageTransmitter(object):
 
 		return self.response_pool[request_id]
 
-	def convert_image_to_bytes(self, bitmap_file):
+	@staticmethod
+	def convert_image_to_bytes(bitmap_file, normalize=False):
 		"""
 		Load image file and convert it into universal bytes format.
 		:param bitmap_file: Path to file or File object.
 		:return: Image bytes
 		"""
+		img = None
 		try:
 			img = Image.open(bitmap_file)
-			return img.tobytes()
 		except OSError as e:
 			log.error("Invalid input file.")
 			log.error(e)
 			return None
+
+		if normalize:
+			if img.mode == "RGBA":
+				# replace alpha channel with white color
+				img_data = img.load()
+				for y in range(img.size[1]):
+					for x in range(img.size[0]):
+						if img_data[x, y][3] < 255:
+							img_data[x, y] = (255, 255, 255, 255)
+				img.thumbnail([img.width, img.height], Image.ANTIALIAS)
+
+			img = img.convert('L')  # convert image to monochrome (white = 0xff, black = 0x00)
+			img_data = img.load()
+			for y in range(img.size[1]):
+				for x in range(img.size[0]):
+					img_data[x, y] &= 1  # convert to 1 bit length 0xff -> 0x01, 0x00 -> 0x00
+					img_data[x, y] ^= 1  # negate image bits
+
+		return img.tobytes()
 
 	def convert_bitmap_to_xbm_raw(self, bitmap_bytes):
 		xbm_lst = []
@@ -96,20 +116,23 @@ def cli(ctx, broker, port):
 
 @cli.command("send-image")
 @click.option('-d', '--device', type=str, required=True, help="Device ID or device name.")
+@click.option('--normalize/--no-normalize', default=True, help="Normalize image to monochrome format.")
 @click.argument('bitmap', type=click.Path(exists=True, readable=True))
 @click.pass_obj
-def send_image(it, device, bitmap):
+def send_image(it, device, normalize, bitmap):
 	"""
 
 	:param it: Context to ImageTransmitter object
 	:type it: ImageTransmitter
 	:return:
 	"""
-	img = Image.open(bitmap)
-	img_bytes = img.tobytes()
-	xbm_bytes = it.convert_bitmap_to_xbm_raw(img_bytes)
+	bytes = it.convert_image_to_bytes(bitmap, normalize=normalize)
+	if bytes:
+		xbm_bytes = it.convert_bitmap_to_xbm_raw(bytes)
+		it.mqtt.publish(it.get_display_topic(device), xbm_bytes, qos=0)
+	else:
+		print('error')
 
-	it.mqtt.publish(it.get_display_topic(device), xbm_bytes, qos=0)
 
 @cli.command("send-images")
 @click.option('-d', '--device', type=str, required=True, help="Device ID or device name.")
@@ -142,7 +165,6 @@ def send_images(it, device, frame_rate, bitmaps_folder):
 			it.mqtt.publish(it.get_display_topic(device), img, qos=0)
 			time.sleep(1 / frame_rate)
 		log.debug("Repeating display loop.")
-
 
 
 @cli.command("pipe-interface")
@@ -219,3 +241,4 @@ def get_devices(it):
 
 if __name__ == "__main__":
 	cli()
+# ImageTransmitter.convert_image_to_bytes("num1.png", normalize=True)
