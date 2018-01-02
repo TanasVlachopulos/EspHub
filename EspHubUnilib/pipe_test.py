@@ -18,7 +18,9 @@ if __name__ == '__main__':
 		print("cannot crate pipe")
 
 
-	# pipein = open(pipename, 'r')
+	pipeout = open(pipename, 'r')
+	# pipeout = os.open(pipename, os.O_WRONLY)
+
 	pipein = os.open(pipename, os.O_RDONLY)
 	pipein_obj = Descriptor(pipein)
 	while True:
