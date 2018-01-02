@@ -46,6 +46,20 @@ class ImageTransmitter(object):
 
 		return self.response_pool[request_id]
 
+	def convert_image_to_bytes(self, bitmap_file):
+		"""
+		Load image file and convert it into universal bytes format.
+		:param bitmap_file: Path to file or File object.
+		:return: Image bytes
+		"""
+		try:
+			img = Image.open(bitmap_file)
+			return img.tobytes()
+		except OSError as e:
+			log.error("Invalid input file.")
+			log.error(e)
+			return None
+
 	def convert_bitmap_to_xbm_raw(self, bitmap_bytes):
 		xbm_lst = []
 		try:
@@ -61,6 +75,15 @@ class ImageTransmitter(object):
 			print('end')
 
 		return bytearray(xbm_lst)
+
+	@staticmethod
+	def get_display_topic(device_id):
+		"""
+		Provide topic for device display.
+		:param device_id: Device ID.
+		:return: Display topic.
+		"""
+		return "esp_hub/device/{}/display".format(device_id)
 
 
 @click.group()
@@ -86,7 +109,40 @@ def send_image(it, device, bitmap):
 	img_bytes = img.tobytes()
 	xbm_bytes = it.convert_bitmap_to_xbm_raw(img_bytes)
 
-	it.mqtt.publish("esp_hub/device/{}/display".format(device), xbm_bytes)
+	it.mqtt.publish(it.get_display_topic(device), xbm_bytes, qos=0)
+
+@cli.command("send-images")
+@click.option('-d', '--device', type=str, required=True, help="Device ID or device name.")
+@click.option('-f', '--frame-rate', type=int, default=10, help="Send n frames per second.")
+@click.argument('bitmaps-folder', type=click.Path(exists=True))
+@click.pass_obj
+def send_images(it, device, frame_rate, bitmaps_folder):
+	"""
+
+	:param it:
+	:type it: ImageTransmitter
+	:param device:
+	:param frame_rate:
+	:param bitmaps_folder:
+	:return:
+	"""
+	if not os.path.isdir(bitmaps_folder):
+		log.error("Given path '{}' is not a dictionary.".format(bitmaps_folder))
+		return
+
+	converted_images = []
+
+	for file in [os.path.join(bitmaps_folder, f) for f in os.listdir(bitmaps_folder) if os.path.isfile(os.path.join(bitmaps_folder, f))]:
+		img_bytes = it.convert_image_to_bytes(file)
+		if img_bytes:
+			converted_images.append(it.convert_bitmap_to_xbm_raw(it.convert_bitmap_to_xbm_raw(img_bytes)))
+
+	while True:
+		for img in converted_images:
+			it.mqtt.publish(it.get_display_topic(device), img, qos=0)
+			time.sleep(1 / frame_rate)
+		log.debug("Repeating display loop.")
+
 
 
 @cli.command("pipe-interface")
@@ -127,7 +183,7 @@ def pipe_interface(it, buffer, device, pipe_path):
 					img_bytes = img.tobytes()
 					xbm_bytes = it.convert_bitmap_to_xbm_raw(img_bytes)
 
-					it.mqtt.publish("esp_hub/device/{}/display".format(device), xbm_bytes)
+					it.mqtt.publish(it.get_display_topic(device), xbm_bytes, qos=0)
 				except OSError as e:
 					log.error("Invalid pipe input.")
 					log.error(e)
