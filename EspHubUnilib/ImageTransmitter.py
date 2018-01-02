@@ -1,11 +1,13 @@
-import json
+from PIL import Image
 from Log import Log
 from MqttHandler import MqttHandler
 from Config import Config
 import uuid
 import time
 import click
-from PIL import Image
+import os
+import json
+import io
 
 log = Log.get_logger()
 
@@ -87,6 +89,57 @@ def send_image(it, device, bitmap):
 	it.mqtt.publish("esp_hub/device/{}/display".format(device), xbm_bytes)
 
 
+@cli.command("pipe-interface")
+@click.option('--buffer', type=int, default=4096, help="Size of input buffer in bytes.")
+@click.option('-d', '--device', type=str, required=True, help="Device ID or device name.")
+@click.argument('pipe_path', type=click.Path(exists=False))
+@click.pass_obj
+def pipe_interface(it, buffer, device, pipe_path):
+	if os.name == 'nt':
+		log.error("This command is not supported on OS Windows.")
+		return
+
+	try:
+		if not os.path.exists(pipe_path):
+			os.mkfifo(pipe_path)
+	except AttributeError as e:
+		log.error("Cannot create named pipe.")
+		return
+
+	pipe_fd = os.open(pipe_path, os.O_RDONLY | os.O_NONBLOCK)
+
+	import select
+	poller = select.poll()
+	poller.register(pipe_fd, select.POLLIN)
+	log.info("Listening on pipe interface '{}'".format(pipe_path))
+
+	while True:
+		events = poller.poll()
+		for fd, flags in events:
+			if flags & select.POLLIN:
+				# handling incoming data
+				log.info("Incoming data in pipe.")
+				bytes = os.read(fd, buffer)
+
+				try:
+					img_file = io.BytesIO(bytes)
+					img = Image.open(img_file)
+					img_bytes = img.tobytes()
+					xbm_bytes = it.convert_bitmap_to_xbm_raw(img_bytes)
+
+					it.mqtt.publish("esp_hub/device/{}/display".format(device), xbm_bytes)
+				except OSError as e:
+					log.error("Invalid pipe input.")
+					log.error(e)
+
+			elif flags & select.POLLHUP:
+				# handle when other side close pipe for writing
+				poller.unregister(fd)
+				# this open must be blocking otherwise it fall into forever loop
+				fd_in = os.open(pipe_path, os.O_RDONLY)
+				poller.register(fd_in, select.POLLIN)
+
+
 @cli.command("get-devices")
 @click.pass_obj
 def get_devices(it):
@@ -109,7 +162,4 @@ def get_devices(it):
 
 
 if __name__ == "__main__":
-	# it = ImageTransmitter()
-	# it.cli()
-	# it.get_devices()
 	cli()
