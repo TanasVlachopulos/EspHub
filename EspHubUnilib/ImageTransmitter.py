@@ -1,6 +1,7 @@
 from PIL import Image
 from Log import Log
 from MqttHandler import MqttHandler
+from threading import Event
 from Config import Config
 import uuid
 import time
@@ -18,16 +19,22 @@ class ImageTransmitter(object):
 
 	def __init__(self, server_address, port=1883, user_name="", password="", client_id=""):
 		self.mqtt = MqttHandler(server_address, port, username=user_name, password=password, client_id=client_id)
-		self.request_pool = set()
+		self.request_pool = dict()
 		self.response_pool = dict()
 
 	def register_topic(self, topic):
+		"""
+		Register specific topic.
+		:param topic: Topic string.
+		"""
 		self.mqtt.register_topic(topic, self.mqtt_api_response_callback)
 
 	def mqtt_api_response_callback(self, client, userdata, msg):
+		"""
+		Callback for incoming responses from server.
+		"""
 		response_id = msg.topic.split('/')[-1]
 		if response_id in self.request_pool:
-			self.request_pool.remove(response_id)
 			log.debug("Incoming response on request {}.".format(response_id))
 
 			try:
@@ -37,14 +44,27 @@ class ImageTransmitter(object):
 				log.error("Cannot parse response from server.")
 				self.response_pool[response_id] = None
 
+			event = self.request_pool[response_id]
+			event.set()
+
 		else:
 			log.error("unknown response id")
 
-	def wait_for_response(self, request_id):
-		while request_id not in self.response_pool:
-			time.sleep(0.1)
-
-		return self.response_pool[request_id]
+	def wait_for_response(self, request_id, timeout=5):
+		"""
+		Check if request with given request_id receive response from server.
+		Return server response if is available otherwise block program and wait for response.
+		:param request_id: ID of request.
+		:param timeout: Waiting timeout in seconds.
+		:return: Response object dictionary.
+		"""
+		if request_id in self.request_pool:
+			event = self.request_pool[request_id]
+			if event.wait(timeout):
+				return self.response_pool.pop(request_id)
+			else:
+				log.error("Request '{}' timeout. EspHubServer is probably unavailable.".format(request_id))
+				return None
 
 	@staticmethod
 	def convert_image_to_bytes(bitmap_file, normalize=False):
@@ -81,6 +101,11 @@ class ImageTransmitter(object):
 		return img.tobytes()
 
 	def convert_bitmap_to_xbm_raw(self, bitmap_bytes):
+		"""
+		Convert monochrome bitmap with 1-bit color depth into 8px per byte monochrome format.
+		:param bitmap_bytes: Bytes of bitmap in format '0x00 0x01 0x00 0x01 ...'
+		:return: Bytearray with 8 pixels per byte.
+		"""
 		xbm_lst = []
 		try:
 			for i in range(0, len(bitmap_bytes), 8):
@@ -262,17 +287,18 @@ def get_devices(it):
 	This command list all devices with connected display and show their IDs.
 	"""
 	uid = str(uuid.uuid4())
-	it.request_pool.add(uid)
+	it.request_pool[uid] = Event()  # create new waiting event default se to False
 	it.register_topic(it.BASE_RESPONSE_TOPIC + "+")
 	it.mqtt.publish("{}{}".format(it.BASE_REQUEST_TOPIC, uid), "get_display_devices", qos=1)
 
 	response = it.wait_for_response(uid)
-	print("{:15}{:15}".format("device name", "device id"))
-	print("-" * 30)
-	for device in response.get('payload', list()):
-		print("{:15}{:15}".format(device.get('name'), device.get('id')))
+	if response:
+		print("{:15}{:15}".format("device name", "device id"))
+		print("-" * 30)
+		for device in response.get('payload', list()):
+			print("{:15}{:15}".format(device.get('name'), device.get('id')))
 
-	return response
+		return response
 
 
 if __name__ == "__main__":
