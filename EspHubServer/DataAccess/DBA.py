@@ -1,4 +1,4 @@
-from sqlalchemy import desc, and_
+from sqlalchemy import desc, and_, func
 from DataAccess.DAO import *
 from Tools.Log import Log
 
@@ -57,6 +57,14 @@ def get_device(session, device_id):
 	"""
 	return session.query(Device).get(device_id)
 
+def get_devices_by_name(session, device_name):
+	"""
+	Get all devices with specific name. Searching ignore letter cases!
+	:param session: Database session.
+	:param device_name: Device name. Ignoring case insensitive.
+	:return: List of DAO Device objects.
+	"""
+	return session.query(Device).filter(func.lower(Device.name) == func.lower(device_name)).all()
 
 def insert_device(session, device):
 	"""
