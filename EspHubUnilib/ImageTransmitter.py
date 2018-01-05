@@ -155,12 +155,17 @@ class ImageTransmitter(object):
 @click.option('-u', '--user-name', type=str, default="", help="User name for connection to MQTT broker.")
 @click.option('-P', '--password', type=str, default="", help="Password for connection to MQTT broker.")
 @click.option('--client-id', type=str, default="", help="Specific client ID for connection to MQTT broker.")
+@click.option('-v', '--verbose', is_flag=True, default=False, help="Enable debug outputs.")
 @click.pass_context
-def cli(ctx, broker, port, user_name, password, client_id):
+def cli(ctx, broker, port, user_name, password, client_id, verbose):
 	"""
 	This multi-tool provides several methods to send data to a devices which use EspHubLibrary. The MQTT protocol is used for data transmission so running MQTT broker is required.
 	"""
-	# TODO add verbose level
+	if verbose:
+		log.setLevel("DEBUG")
+	else:
+		log.setLevel("INFO")
+
 	ctx.obj = ImageTransmitter(broker, port=port, user_name=user_name, password=password, client_id=client_id)
 	ctx.obj.register_topic(ctx.obj.BASE_RESPONSE_TOPIC + "+")
 
@@ -189,6 +194,7 @@ def send_image(it, device, normalize, bitmap):
 	if bytes:
 		xbm_bytes = it.convert_bitmap_to_xbm_raw(bytes)
 		it.mqtt.publish(it.get_display_topic(device_id), xbm_bytes, qos=0)
+		log.info("Image '{}' successfully send.".format(bitmap))
 	else:
 		log.error("Cannot convert image.")
 
@@ -227,6 +233,7 @@ def send_images(it, device, frame_rate, normalize, bitmaps_folder):
 		if img_bytes:
 			converted_images.append(it.convert_bitmap_to_xbm_raw(img_bytes))
 
+	log.info("Start images transmitting.")
 	while True:
 		for img in converted_images:
 			it.mqtt.publish(it.get_display_topic(device_id), img, qos=0)

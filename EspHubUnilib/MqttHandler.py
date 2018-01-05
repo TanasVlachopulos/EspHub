@@ -43,7 +43,7 @@ class MqttHandler(object):
 
 	def _on_connect_callback(self, client, userdata, flags, rc):
 		if rc == 0:
-			self.log.info("Successfully connected to MQTT broker")
+			self.log.debug("Successfully connected to MQTT broker")
 			self.is_connected = True
 
 	def _on_disconnect_callback(self, client, userdata, rc):
