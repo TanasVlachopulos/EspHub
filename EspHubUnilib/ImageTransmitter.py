@@ -321,9 +321,8 @@ def get_devices(it):
 
 	This command list all devices with connected display and show their IDs.
 	"""
-	uid = str(uuid.uuid4())
-	it.request_pool[uid] = Event()  # create new waiting event default se to False
-	it.mqtt.publish("{}{}".format(it.BASE_REQUEST_TOPIC, uid), "get_display_devices", qos=1)
+	uid = it.register_request()
+	it.mqtt.publish(ImageTransmitter.get_request_topic(uid), "get_display_devices", qos=1)
 
 	response = it.wait_for_response(uid)
 	if response and response.get('status') == 'ok':
@@ -362,10 +361,10 @@ def translate_device_name(it, device_name, timeout=1):
 		else:
 			log.info("Multiple devices with same name found. Choose your device ID.")
 			print("Devices with name '{}':".format(device_name))
-			print("-" * 30)
+			print("-" * 40)
 			for id in ids:
-				print(id)
-			print("-" * 30)
+				print("| {:37}|".format(id))
+			print("-" * 40)
 			return None
 	elif response and response.get("status") == 'nodata':
 		log.error("No device with name '{}' found.".format(device_name))

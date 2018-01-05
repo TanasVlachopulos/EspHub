@@ -149,10 +149,10 @@ if __name__ == '__main__':
     print('Len of img bytes:', len(img_bytes))
     
     b_list_out = convert_bitmap_to_xbm_raw(img_bytes)
-    # print(b_list_out)
+    print(b_list_out)
 
     b_out = bytearray(b_list_out)
-    # print(b_out)
+    print(b_out)
     print(len(b_out))
     # print(img_bytes)
 
