@@ -29,6 +29,15 @@ class ImageTransmitter(object):
 		"""
 		self.mqtt.register_topic(topic, self.mqtt_api_response_callback)
 
+	def register_request(self):
+		"""
+		Generate and register request ID.
+		:return: Unique request ID.
+		"""
+		uid = str(uuid.uuid4())
+		self.request_pool[uid] = Event()  # create new waiting event default se to False
+		return uid
+
 	def mqtt_api_response_callback(self, client, userdata, msg):
 		"""
 		Callback for incoming responses from server.
@@ -130,6 +139,15 @@ class ImageTransmitter(object):
 		"""
 		return "esp_hub/device/{}/display".format(device_id)
 
+	@staticmethod
+	def get_request_topic(uuid):
+		"""
+		Provide topic for MQTT api request.
+		:param uuid: Unique request ID.
+		:return: Request topic.
+		"""
+		return "{}{}".format(ImageTransmitter.BASE_REQUEST_TOPIC, uuid)
+
 
 @click.group()
 @click.option('-b', '--broker', type=str, required=True, help="MQTT broker domain name or IP address.")
@@ -144,6 +162,7 @@ def cli(ctx, broker, port, user_name, password, client_id):
 	"""
 	# TODO add verbose level
 	ctx.obj = ImageTransmitter(broker, port=port, user_name=user_name, password=password, client_id=client_id)
+	ctx.obj.register_topic(ctx.obj.BASE_RESPONSE_TOPIC + "+")
 
 
 @cli.command("send-image")
@@ -158,10 +177,18 @@ def send_image(it, device, normalize, bitmap):
 	Recommended format is monochrome .bmp with 1-bit color depth but also other format such as .png can be used if normalize option is enabled.
 	Normalization process try to convert image into standardized monochrome format but quality of results is questionable.
 	"""
+	if not os.path.isfile(bitmap):
+		log.error("Given path '{}' is not a file.".format(bitmap))
+		return
+
+	device_id = translate_device_name(it, device)
+	if not device_id:
+		return
+
 	bytes = it.convert_image_to_bytes(bitmap, normalize=normalize)
 	if bytes:
 		xbm_bytes = it.convert_bitmap_to_xbm_raw(bytes)
-		it.mqtt.publish(it.get_display_topic(device), xbm_bytes, qos=0)
+		it.mqtt.publish(it.get_display_topic(device_id), xbm_bytes, qos=0)
 	else:
 		log.error("Cannot convert image.")
 
@@ -185,6 +212,10 @@ def send_images(it, device, frame_rate, normalize, bitmaps_folder):
 		log.error("Given path '{}' is not a dictionary.".format(bitmaps_folder))
 		return
 
+	device_id = translate_device_name(it, device)
+	if not device_id:
+		return
+
 	if frame_rate > 40:
 		log.error("Wowow calm down! {} FPS? Are you kidding? This is not for gaming monitor. Maximum is 40 FPS.".format(frame_rate))
 		return
@@ -198,7 +229,7 @@ def send_images(it, device, frame_rate, normalize, bitmaps_folder):
 
 	while True:
 		for img in converted_images:
-			it.mqtt.publish(it.get_display_topic(device), img, qos=0)
+			it.mqtt.publish(it.get_display_topic(device_id), img, qos=0)
 			time.sleep(1 / frame_rate)
 		log.debug("Repeating display loop.")
 
@@ -236,6 +267,10 @@ def pipe_interface(it, buffer, device, normalize, pipe_path):
 		log.error("This command is not supported on OS Windows.")
 		return
 
+	device_id = translate_device_name(it, device)
+	if not device_id:
+		return
+
 	try:
 		if not os.path.exists(pipe_path):
 			os.mkfifo(pipe_path)
@@ -259,14 +294,14 @@ def pipe_interface(it, buffer, device, normalize, pipe_path):
 		for fd, flags in events:
 			if flags & select.POLLIN:
 				# handling incoming data
-				log.info("Incoming data in pipe.")
+				log.debug("Incoming data in pipe.")
 				bytes = os.read(fd, buffer)
 
 				img_file = io.BytesIO(bytes)  # create in-memory binary file
 				img_bytes = it.convert_image_to_bytes(img_file, normalize)
 				if img_bytes:
 					xmb_bytes = it.convert_bitmap_to_xbm_raw(img_bytes)
-					it.mqtt.publish(it.get_display_topic(device), xmb_bytes, qos=0)
+					it.mqtt.publish(it.get_display_topic(device_id), xmb_bytes, qos=0)
 
 			elif flags & select.POLLHUP:
 				# handle when other side close pipe for writing
@@ -288,18 +323,61 @@ def get_devices(it):
 	"""
 	uid = str(uuid.uuid4())
 	it.request_pool[uid] = Event()  # create new waiting event default se to False
-	it.register_topic(it.BASE_RESPONSE_TOPIC + "+")
 	it.mqtt.publish("{}{}".format(it.BASE_REQUEST_TOPIC, uid), "get_display_devices", qos=1)
 
 	response = it.wait_for_response(uid)
-	if response:
-		print("{:15}{:15}".format("device name", "device id"))
-		print("-" * 30)
+	if response and response.get('status') == 'ok':
+		print("-" * 35)
+		print("| {:15}| {:15}|".format("device name", "device id"))
+		print("-" * 35)
 		for device in response.get('payload', list()):
-			print("{:15}{:15}".format(device.get('name'), device.get('id')))
+			print("| {:15}| {:15}|".format(device.get('name'), device.get('id')))
+		print("-" * 35)
 
 		return response
+	elif response and response.get('status') == 'nodata':
+		print("No device with display found.")
+		return None
+
+
+def translate_device_name(it, device_name, timeout=1):
+	"""
+	Translate device name to device ID.
+	If translation failed return device_name.
+	If there is more device with same name, prompt user with device IDs.
+	:param it: ImageTransmitter instance
+	:type it: ImageTransmitter
+	:param device_name: Name of device. Case insensitive.
+	:param timeout: Waiting timeout.
+	:return: Device ID.
+	"""
+	uid = it.register_request()
+	it.mqtt.publish(ImageTransmitter.get_request_topic(uid), "get_device_id device_name='{}'".format(device_name), qos=1)
+
+	response = it.wait_for_response(uid, timeout=timeout)
+	if response and response.get("status") == 'ok':
+		ids = response.get('payload')
+		if len(ids) == 1:
+			return ids[0]
+		else:
+			log.info("Multiple devices with same name found. Choose your device ID.")
+			print("Devices with name '{}':".format(device_name))
+			print("-" * 30)
+			for id in ids:
+				print(id)
+			print("-" * 30)
+			return None
+	elif response and response.get("status") == 'nodata':
+		log.error("No device with name '{}' found.".format(device_name))
+		log.info("Trying to send data to device with ID '{}'.".format(device_name))
+		return device_name
+	else:
+		log.info("No response from server. Trying to send data to device with ID '{}'.".format(device_name))
+		return device_name
 
 
 if __name__ == "__main__":
 	cli()
+	# it = ImageTransmitter("tanas.eu")
+	# it.register_topic(it.BASE_RESPONSE_TOPIC + "+")
+	# print(translate_device_name(it, "node mcu"))
