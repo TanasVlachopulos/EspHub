@@ -38,7 +38,7 @@ void setup()
 	hub.handleWifiConnection();
 	hub.setCallback(callback);
 	hub.setServer("192.168.1.1", 1883);
-	hub.setAbilities("['internal_temp', 'hall_sensor']");
+	hub.setAbilities("['internal_temp', 'hall_sensor', 'display']");
 	hub.begin();
 }
 
@@ -56,18 +56,21 @@ void loop()
 void callback(char *topic, uint8_t *payload, unsigned int length)
 {
 	Serial.println("callback");
-	// Serial.println(topic);
-	// Serial.println((char *)payload);
 	Serial.println(length);
 	display.clear();
 
-	char *buff;
-	buff = (char *)malloc(length + 1);
-	bzero(buff, length + 1);
-	memcpy(buff, payload, length);
+	// char *buff;
+	// buff = (char *)malloc(length + 1);
+	// bzero(buff, length + 1);
+	// memcpy(buff, payload, length);
 
+	int16_t px = (int16_t)payload[length - 4];
+	int16_t py = (int16_t)payload[length - 3];
+	int16_t height = (int16_t)payload[length - 2];
+	int16_t width = (int16_t)payload[length - 1];
+	Serial.printf("%d, %d, %d %d\n", px, py, height, width);
 
-	display.drawXbm(32, 0, 64, 64, buff);
+	display.drawXbm(px, py, width, height, (const char*)payload);
 	display.display();
 
 	// for (int i = 0; i < length; i++)
@@ -75,7 +78,7 @@ void callback(char *topic, uint8_t *payload, unsigned int length)
 	// 	Serial.print((int)buff[i]);
 	// }
 	// Serial.println();
-	free(buff);
+	// free(buff);
 }
 
 /// Read internal temperature of ESP core

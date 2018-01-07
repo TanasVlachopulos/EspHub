@@ -109,10 +109,31 @@ class ImageTransmitter(object):
 
 		return img.tobytes()
 
-	def convert_bitmap_to_xbm_raw(self, bitmap_bytes):
+	@staticmethod
+	def get_image_dimension(bitmap_file):
+		"""
+		Obtain image height and width.
+		:param bitmap_file: Path to file or File object.
+		:return: Height, width in pixel.
+		"""
+		img = None
+		try:
+			img = Image.open(bitmap_file)
+		except OSError as e:
+			log.error("Invalid input file.")
+			log.error(e)
+			return None
+
+		return img.height, img.width
+
+	def convert_bitmap_to_xbm_raw(self, bitmap_bytes, x=0, y=0, height=64, width=64):
 		"""
 		Convert monochrome bitmap with 1-bit color depth into 8px per byte monochrome format.
 		:param bitmap_bytes: Bytes of bitmap in format '0x00 0x01 0x00 0x01 ...'
+		:param x: Starting X position on display.
+		:param y: Starting Y position on display.
+		:param height: Height of image.
+		:param width: Width of image.
 		:return: Bytearray with 8 pixels per byte.
 		"""
 		xbm_lst = []
@@ -126,7 +147,12 @@ class ImageTransmitter(object):
 
 				xbm_lst.append(pixel_byte)
 		except IndexError:
-			print('end')
+			pass
+
+		xbm_lst.append(x)
+		xbm_lst.append(y)
+		xbm_lst.append(height)
+		xbm_lst.append(width)
 
 		return bytearray(xbm_lst)
 
@@ -173,9 +199,11 @@ def cli(ctx, broker, port, user_name, password, client_id, verbose):
 @cli.command("send-image")
 @click.option('-d', '--device', type=str, required=True, help="Device ID or device name.")
 @click.option('--normalize/--no-normalize', default=True, help="Normalize image to monochrome format. Default Enabled.")
+@click.option('-x', default=0, help="Start X position on display.")
+@click.option('-y', default=0, help="Start Y position on display.")
 @click.argument('bitmap', type=click.Path(exists=True, readable=True))
 @click.pass_obj
-def send_image(it, device, normalize, bitmap):
+def send_image(it, device, normalize, x, y, bitmap):
 	"""
 	Send single image to specific device.
 
@@ -191,8 +219,9 @@ def send_image(it, device, normalize, bitmap):
 		return
 
 	bytes = it.convert_image_to_bytes(bitmap, normalize=normalize)
+	h, w = it.get_image_dimension(bitmap)
 	if bytes:
-		xbm_bytes = it.convert_bitmap_to_xbm_raw(bytes)
+		xbm_bytes = it.convert_bitmap_to_xbm_raw(bytes, x, y, h, w)
 		it.mqtt.publish(it.get_display_topic(device_id), xbm_bytes, qos=0)
 		log.info("Image '{}' successfully send.".format(bitmap))
 	else:
@@ -203,9 +232,11 @@ def send_image(it, device, normalize, bitmap):
 @click.option('-d', '--device', type=str, required=True, help="Device ID or device name.")
 @click.option('-f', '--frame-rate', type=int, default=10, help="Send <INTEGER> frames per second. Default 10.")
 @click.option('--normalize/--no-normalize', default=True, help="Normalize image to monochrome format. Default Enabled.")
+@click.option('-x', default=0, help="Start X position on display.")
+@click.option('-y', default=0, help="Start Y position on display.")
 @click.argument('bitmaps-folder', type=click.Path(exists=True))
 @click.pass_obj
-def send_images(it, device, frame_rate, normalize, bitmaps_folder):
+def send_images(it, device, frame_rate, normalize, x, y, bitmaps_folder):
 	"""
 	Send content of directory to specific device.
 
@@ -230,8 +261,9 @@ def send_images(it, device, frame_rate, normalize, bitmaps_folder):
 
 	for file in [os.path.join(bitmaps_folder, f) for f in os.listdir(bitmaps_folder) if os.path.isfile(os.path.join(bitmaps_folder, f))]:
 		img_bytes = it.convert_image_to_bytes(file, normalize)
+		h, w = it.get_image_dimension(file)
 		if img_bytes:
-			converted_images.append(it.convert_bitmap_to_xbm_raw(img_bytes))
+			converted_images.append(it.convert_bitmap_to_xbm_raw(img_bytes, x, y, h, w))
 
 	log.info("Start images transmitting.")
 	while True:
@@ -245,9 +277,11 @@ def send_images(it, device, frame_rate, normalize, bitmaps_folder):
 @click.option('--buffer', type=int, default=4096, help="Size of input buffer in bytes. Default 4096.")
 @click.option('-d', '--device', type=str, required=True, help="Device ID or device name.")
 @click.option('--normalize/--no-normalize', default=True, help="Normalize image to monochrome format. Default Enabled.")
+@click.option('-x', default=0, help="Start X position on display.")
+@click.option('-y', default=0, help="Start Y position on display.")
 @click.argument('pipe_path', metavar="<PATH>", type=click.Path(exists=False))
 @click.pass_obj
-def pipe_interface(it, buffer, device, normalize, pipe_path):
+def pipe_interface(it, buffer, device, normalize, x, y, pipe_path):
 	"""
 	Create pipe interface for sending images.
 
@@ -306,8 +340,9 @@ def pipe_interface(it, buffer, device, normalize, pipe_path):
 
 				img_file = io.BytesIO(bytes)  # create in-memory binary file
 				img_bytes = it.convert_image_to_bytes(img_file, normalize)
+				h, w = it.get_image_dimension(img_bytes)
 				if img_bytes:
-					xmb_bytes = it.convert_bitmap_to_xbm_raw(img_bytes)
+					xmb_bytes = it.convert_bitmap_to_xbm_raw(img_bytes, x, y, h, w)
 					it.mqtt.publish(it.get_display_topic(device_id), xmb_bytes, qos=0)
 
 			elif flags & select.POLLHUP:
@@ -384,6 +419,6 @@ def translate_device_name(it, device_name, timeout=1):
 
 if __name__ == "__main__":
 	cli()
-	# it = ImageTransmitter("tanas.eu")
-	# it.register_topic(it.BASE_RESPONSE_TOPIC + "+")
-	# print(translate_device_name(it, "node mcu"))
+# it = ImageTransmitter("tanas.eu")
+# it.register_topic(it.BASE_RESPONSE_TOPIC + "+")
+# print(translate_device_name(it, "node mcu"))
