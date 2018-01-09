@@ -18,9 +18,13 @@ class ImageTransmitter(object):
 	BASE_RESPONSE_TOPIC = "esp_hub/api/response/"
 
 	def __init__(self, server_address, port=1883, user_name="", password="", client_id=""):
-		self.mqtt = MqttHandler(server_address, port, username=user_name, password=password, client_id=client_id)
+		self.mqtt = None
+		if server_address:
+			self.mqtt = MqttHandler(server_address, port, username=user_name, password=password, client_id=client_id)
+
 		self.request_pool = dict()
 		self.response_pool = dict()
+		is_udp = False
 
 	def register_topic(self, topic):
 		"""
@@ -176,14 +180,15 @@ class ImageTransmitter(object):
 
 
 @click.group()
-@click.option('-b', '--broker', type=str, required=True, help="MQTT broker domain name or IP address.")
+@click.option('-b', '--broker', type=str, default=None, help="MQTT broker domain name or IP address.")
 @click.option('-p', '--port', type=int, default=1883, help="Network port of MQTT broker. Default 1883.")
 @click.option('-u', '--user-name', type=str, default="", help="User name for connection to MQTT broker.")
 @click.option('-P', '--password', type=str, default="", help="Password for connection to MQTT broker.")
 @click.option('--client-id', type=str, default="", help="Specific client ID for connection to MQTT broker.")
 @click.option('-v', '--verbose', is_flag=True, default=False, help="Enable debug outputs.")
+@click.option('--udp', is_flag=True, default=False, help="Switch to UDP mode, images will be send in UDP packets.")
 @click.pass_context
-def cli(ctx, broker, port, user_name, password, client_id, verbose):
+def cli(ctx, broker, port, user_name, password, client_id, verbose, udp):
 	"""
 	This multi-tool provides several methods to send data to a devices which use EspHubLibrary. The MQTT protocol is used for data transmission so running MQTT broker is required.
 	"""
@@ -193,7 +198,13 @@ def cli(ctx, broker, port, user_name, password, client_id, verbose):
 		log.setLevel("INFO")
 
 	ctx.obj = ImageTransmitter(broker, port=port, user_name=user_name, password=password, client_id=client_id)
-	ctx.obj.register_topic(ctx.obj.BASE_RESPONSE_TOPIC + "+")
+	ctx.obj.is_udp = udp
+
+	if not udp and not broker:
+		log.error("Missing option --broker. Running without --broker option is available only in UDP mode. For more info see: ImageTransmitter --help")
+		exit(1)
+	elif broker:
+		ctx.obj.register_topic(ctx.obj.BASE_RESPONSE_TOPIC + "+")
 
 
 @cli.command("send-image")
@@ -222,7 +233,10 @@ def send_image(it, device, normalize, x, y, bitmap):
 	h, w = it.get_image_dimension(bitmap)
 	if bytes:
 		xbm_bytes = it.convert_bitmap_to_xbm_raw(bytes, x, y, h, w)
-		it.mqtt.publish(it.get_display_topic(device_id), xbm_bytes, qos=0)
+		if it.is_udp:
+			pass
+		else:
+			it.mqtt.publish(it.get_display_topic(device_id), xbm_bytes, qos=0)
 		log.info("Image '{}' successfully send.".format(bitmap))
 	else:
 		log.error("Cannot convert image.")
@@ -268,7 +282,10 @@ def send_images(it, device, frame_rate, normalize, x, y, bitmaps_folder):
 	log.info("Start images transmitting.")
 	while True:
 		for img in converted_images:
-			it.mqtt.publish(it.get_display_topic(device_id), img, qos=0)
+			if it.is_udp:
+				pass
+			else:
+				it.mqtt.publish(it.get_display_topic(device_id), img, qos=0)
 			time.sleep(1 / frame_rate)
 		log.debug("Repeating display loop.")
 
@@ -343,7 +360,10 @@ def pipe_interface(it, buffer, device, normalize, x, y, pipe_path):
 				h, w = it.get_image_dimension(img_bytes)
 				if img_bytes:
 					xmb_bytes = it.convert_bitmap_to_xbm_raw(img_bytes, x, y, h, w)
-					it.mqtt.publish(it.get_display_topic(device_id), xmb_bytes, qos=0)
+					if it.is_udp:
+						pass
+					else:
+						it.mqtt.publish(it.get_display_topic(device_id), xmb_bytes, qos=0)
 
 			elif flags & select.POLLHUP:
 				# handle when other side close pipe for writing
@@ -363,6 +383,10 @@ def get_devices(it):
 
 	This command list all devices with connected display and show their IDs.
 	"""
+	if not it.mqtt:
+		log.error("Get-devices command is available only with broker credentials (option -b). For more info see: ImageTransmitter --help.")
+		return
+
 	uid = it.register_request()
 	it.mqtt.publish(ImageTransmitter.get_request_topic(uid), "get_display_devices", qos=1)
 
@@ -392,6 +416,10 @@ def translate_device_name(it, device_name, timeout=1):
 	:param timeout: Waiting timeout.
 	:return: Device ID.
 	"""
+	if not it.mqtt:
+		log.debug("Missing MQTT connection cannot translate device name to ID.")
+		return device_name
+
 	uid = it.register_request()
 	it.mqtt.publish(ImageTransmitter.get_request_topic(uid), "get_device_id device_name='{}'".format(device_name), qos=1)
 
@@ -415,6 +443,9 @@ def translate_device_name(it, device_name, timeout=1):
 	else:
 		log.info("No response from server. Trying to send data to device with ID '{}'.".format(device_name))
 		return device_name
+
+def translate_device_name_to_ip(it, device_name, timeout=1):
+	pass
 
 
 if __name__ == "__main__":
