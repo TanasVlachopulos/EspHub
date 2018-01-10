@@ -2,13 +2,13 @@ from PIL import Image
 from Log import Log
 from MqttHandler import MqttHandler
 from threading import Event
-from Config import Config
 import uuid
 import time
 import click
 import os
 import json
 import io
+import socket
 
 log = Log.get_logger()
 
@@ -78,6 +78,29 @@ class ImageTransmitter(object):
 			else:
 				log.error("Request '{}' timeout. EspHubServer is probably unavailable.".format(request_id))
 				return None
+
+	def send_udp_packet(self, bytes, ip, port=9999):
+		"""
+		Send image as UDP packet to target.
+		:param bytes: Bytes of bitmap.
+		:param ip: IPv4 address or hostname.
+		:param port: Target listening port.
+		:return:
+		"""
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		destination = (ip, port)
+
+		try:
+			send = sock.sendto(bytes, destination)
+			log.debug("Send {} bytes to target {}.".format(send, ip))
+		except socket.gaierror:
+			log.error("Cannot resolve address {}.".format(ip))
+		except socket.timeout:
+			log.error("Socket timeout. Cannot send data over UDP.")
+		except OSError as e:
+			log.error("UDP socket error: {}".format(e))
+		finally:
+			sock.close()
 
 	@staticmethod
 	def convert_image_to_bytes(bitmap_file, normalize=False):
@@ -212,9 +235,10 @@ def cli(ctx, broker, port, user_name, password, client_id, verbose, udp):
 @click.option('--normalize/--no-normalize', default=True, help="Normalize image to monochrome format. Default Enabled.")
 @click.option('-x', default=0, help="Start X position on display.")
 @click.option('-y', default=0, help="Start Y position on display.")
+@click.option('--udp-port', type=int, default=9999, help="Device UDP port in UDP mode.")
 @click.argument('bitmap', type=click.Path(exists=True, readable=True))
 @click.pass_obj
-def send_image(it, device, normalize, x, y, bitmap):
+def send_image(it, device, normalize, x, y, udp_port, bitmap):
 	"""
 	Send single image to specific device.
 
@@ -234,7 +258,7 @@ def send_image(it, device, normalize, x, y, bitmap):
 	if bytes:
 		xbm_bytes = it.convert_bitmap_to_xbm_raw(bytes, x, y, h, w)
 		if it.is_udp:
-			pass
+			it.send_udp_packet(xbm_bytes, device, udp_port)
 		else:
 			it.mqtt.publish(it.get_display_topic(device_id), xbm_bytes, qos=0)
 		log.info("Image '{}' successfully send.".format(bitmap))
