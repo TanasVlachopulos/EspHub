@@ -37,7 +37,7 @@ void setup()
 
 	hub.handleWifiConnection();
 	hub.setCallback(callback);
-	hub.setServer("192.168.1.1", 1883);
+	hub.setServer("193.179.108.146", 1883);
 	hub.setAbilities("['internal_temp', 'hall_sensor', 'display']");
 	hub.begin();
 }

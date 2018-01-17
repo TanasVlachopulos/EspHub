@@ -340,7 +340,7 @@ void EspHubDiscovery::checkServerCallback(char *topic, byte *payload, unsigned i
 		}
 		else
 		{
-			Serial.println("ESP_HUB: Server validation failed");
+			Serial.printf("ESP_HUB: Server validation failed. Vaiting for candidate %s, %d. Recieve candidate %s, %d.\n", server_ip, server_port, json["ip"].as<char*>(), json["port"].as<int>());
 			client.disconnect(); // disconnect in case of ip addres mishmash
 		}
 	}
