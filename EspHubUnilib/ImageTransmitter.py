@@ -272,9 +272,10 @@ def send_image(it, device, normalize, x, y, udp_port, bitmap):
 @click.option('--normalize/--no-normalize', default=True, help="Normalize image to monochrome format. Default Enabled.")
 @click.option('-x', default=0, help="Start X position on display.")
 @click.option('-y', default=0, help="Start Y position on display.")
+@click.option('--udp-port', type=int, default=9999, help="Device UDP port in UDP mode.")
 @click.argument('bitmaps-folder', type=click.Path(exists=True))
 @click.pass_obj
-def send_images(it, device, frame_rate, normalize, x, y, bitmaps_folder):
+def send_images(it, device, frame_rate, normalize, x, y, udp_port, bitmaps_folder):
 	"""
 	Send content of directory to specific device.
 
@@ -291,8 +292,8 @@ def send_images(it, device, frame_rate, normalize, x, y, bitmaps_folder):
 	if not device_id:
 		return
 
-	if frame_rate > 40:
-		log.error("Wowow calm down! {} FPS? Are you kidding? This is not for gaming monitor. Maximum is 40 FPS.".format(frame_rate))
+	if frame_rate > 60:
+		log.error("Wowow calm down! {} FPS? Are you kidding? This is not for gaming monitor. Maximum is 60 FPS.".format(frame_rate))
 		return
 
 	converted_images = []
@@ -307,7 +308,7 @@ def send_images(it, device, frame_rate, normalize, x, y, bitmaps_folder):
 	while True:
 		for img in converted_images:
 			if it.is_udp:
-				pass
+				it.send_udp_packet(img, device, udp_port)
 			else:
 				it.mqtt.publish(it.get_display_topic(device_id), img, qos=0)
 			time.sleep(1 / frame_rate)
@@ -320,9 +321,10 @@ def send_images(it, device, frame_rate, normalize, x, y, bitmaps_folder):
 @click.option('--normalize/--no-normalize', default=True, help="Normalize image to monochrome format. Default Enabled.")
 @click.option('-x', default=0, help="Start X position on display.")
 @click.option('-y', default=0, help="Start Y position on display.")
+@click.option('--udp-port', type=int, default=9999, help="Device UDP port in UDP mode.")
 @click.argument('pipe_path', metavar="<PATH>", type=click.Path(exists=False))
 @click.pass_obj
-def pipe_interface(it, buffer, device, normalize, x, y, pipe_path):
+def pipe_interface(it, buffer, device, normalize, x, y, udp_port, pipe_path):
 	"""
 	Create pipe interface for sending images.
 
@@ -385,7 +387,7 @@ def pipe_interface(it, buffer, device, normalize, x, y, pipe_path):
 				if img_bytes:
 					xmb_bytes = it.convert_bitmap_to_xbm_raw(img_bytes, x, y, h, w)
 					if it.is_udp:
-						pass
+						it.send_udp_packet(xmb_bytes, device, udp_port)
 					else:
 						it.mqtt.publish(it.get_display_topic(device_id), xmb_bytes, qos=0)
 
