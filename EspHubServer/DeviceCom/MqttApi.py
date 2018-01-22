@@ -22,7 +22,8 @@ class MqttApi(object):
 		"""
 		api_mapper = {'ping': self.ping,
 					  'get_display_devices': self.get_display_devices,
-					  'get_device_id': self.get_device_id, }
+					  'get_device_id': self.get_device_id,
+					  'get_device_ip': self.get_device_ip, }
 
 		tokenize_request = shlex.split(request)  # split request on spaces and preserved quoted substrings
 
@@ -114,8 +115,26 @@ class MqttApi(object):
 				return self.STATUS_OK, [device.id]
 
 			results = DBA.get_devices_by_name(db, wanted_device_name)
-			print(results)
 			if results:
 				return self.STATUS_OK, [device.id for device in results]
 			else:
 				return self.STATUS_NO_DATA, ""
+
+	def get_device_ip(self, args):
+		"""
+		Return last known IP address for given device ID.
+		:param args: Argument dictionary. Arguments: device_id
+		:return: status, payload - device IP
+		"""
+		wanted_device_id = args.get('device_id')
+		if not wanted_device_id:
+			log.error("Missing argument 'device_id' in MQTT API request.")
+			return self.STATUS_ERROR, "Missing argument 'device_id' in MQTT API request."
+
+		with DAC.keep_session() as db:
+			telemetry = DBA.get_telemetry(db, wanted_device_id)
+			if telemetry and telemetry.ip:
+				return self.STATUS_OK, telemetry.ip
+			else:
+				return self.STATUS_NO_DATA, "No IP address found for this device."
+

@@ -89,18 +89,20 @@ class ImageTransmitter(object):
 		"""
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		destination = (ip, port)
-
+		result = False
 		try:
 			send = sock.sendto(bytes, destination)
 			log.debug("Send {} bytes to target {}.".format(send, ip))
+			result = True
 		except socket.gaierror:
-			log.error("Cannot resolve address {}.".format(ip))
+			log.error("Cannot resolve IP address '{}'.".format(ip))
 		except socket.timeout:
 			log.error("Socket timeout. Cannot send data over UDP.")
 		except OSError as e:
 			log.error("UDP socket error: {}".format(e))
 		finally:
 			sock.close()
+			return result
 
 	@staticmethod
 	def convert_image_to_bytes(bitmap_file, normalize=False):
@@ -253,15 +255,21 @@ def send_image(it, device, normalize, x, y, udp_port, bitmap):
 	if not device_id:
 		return
 
+	# try to translate device id to IP address
+	if it.is_udp:
+		device_id = translate_device_id_to_ip(it, device_id)
+
 	bytes = it.convert_image_to_bytes(bitmap, normalize=normalize)
 	h, w = it.get_image_dimension(bitmap)
 	if bytes:
 		xbm_bytes = it.convert_bitmap_to_xbm_raw(bytes, x, y, h, w)
+		res = True
 		if it.is_udp:
-			it.send_udp_packet(xbm_bytes, device, udp_port)
+			res = it.send_udp_packet(xbm_bytes, device_id, udp_port)
 		else:
 			it.mqtt.publish(it.get_display_topic(device_id), xbm_bytes, qos=0)
-		log.info("Image '{}' successfully send.".format(bitmap))
+		if res:
+			log.info("Image '{}' successfully send to '{}'.".format(bitmap, device_id))
 	else:
 		log.error("Cannot convert image.")
 
@@ -292,6 +300,10 @@ def send_images(it, device, frame_rate, normalize, x, y, udp_port, bitmaps_folde
 	if not device_id:
 		return
 
+	# try to translate device id to IP address
+	if it.is_udp:
+		device_id = translate_device_id_to_ip(it, device_id)
+
 	if frame_rate > 60:
 		log.error("Wowow calm down! {} FPS? Are you kidding? This is not for gaming monitor. Maximum is 60 FPS.".format(frame_rate))
 		return
@@ -304,11 +316,12 @@ def send_images(it, device, frame_rate, normalize, x, y, udp_port, bitmaps_folde
 		if img_bytes:
 			converted_images.append(it.convert_bitmap_to_xbm_raw(img_bytes, x, y, h, w))
 
-	log.info("Start images transmitting.")
-	while True:
+	log.info("Start images transmitting to '{}'.".format(device_id))
+	res = True
+	while res:
 		for img in converted_images:
 			if it.is_udp:
-				it.send_udp_packet(img, device, udp_port)
+				res = it.send_udp_packet(img, device_id, udp_port)
 			else:
 				it.mqtt.publish(it.get_display_topic(device_id), img, qos=0)
 			time.sleep(1 / frame_rate)
@@ -355,6 +368,10 @@ def pipe_interface(it, buffer, device, normalize, x, y, udp_port, pipe_path):
 	if not device_id:
 		return
 
+	# try to translate device id to IP address
+	if it.is_udp:
+		device_id = translate_device_id_to_ip(it, device_id)
+
 	try:
 		if not os.path.exists(pipe_path):
 			os.mkfifo(pipe_path)
@@ -371,7 +388,7 @@ def pipe_interface(it, buffer, device, normalize, x, y, udp_port, pipe_path):
 	import select
 	poller = select.poll()
 	poller.register(pipe_fd, select.POLLIN)
-	log.info("Listening on pipe interface '{}'".format(pipe_path))
+	log.info("Listening on pipe interface '{}' redirecting to device '{}'.".format(pipe_path, device_id))
 
 	while True:
 		events = poller.poll()
@@ -387,7 +404,7 @@ def pipe_interface(it, buffer, device, normalize, x, y, udp_port, pipe_path):
 				if img_bytes:
 					xmb_bytes = it.convert_bitmap_to_xbm_raw(img_bytes, x, y, h, w)
 					if it.is_udp:
-						it.send_udp_packet(xmb_bytes, device, udp_port)
+						it.send_udp_packet(xmb_bytes, device_id, udp_port)
 					else:
 						it.mqtt.publish(it.get_display_topic(device_id), xmb_bytes, qos=0)
 
@@ -470,8 +487,33 @@ def translate_device_name(it, device_name, timeout=1):
 		log.info("No response from server. Trying to send data to device with ID '{}'.".format(device_name))
 		return device_name
 
-def translate_device_name_to_ip(it, device_name, timeout=1):
-	pass
+
+def translate_device_id_to_ip(it, device_id, timeout=1):
+	"""
+	Translate device ID to IP address.
+	If translation failed return device ID.
+	:param it: ImageTransmitter instance.
+	:param device_id: ID of device.
+	:param timeout: Waiting timeout.
+	:return: Device IP or parameter device_id
+	"""
+	if not it.mqtt:
+		log.debug("Missing MQTT connection cannot translate device id to IP address.")
+		return device_id
+
+	uid = it.register_request()
+	it.mqtt.publish(ImageTransmitter.get_request_topic(uid), "get_device_ip device_id='{}'".format(device_id), qos=1)
+
+	response = it.wait_for_response(uid, timeout=timeout)
+	if response and response.get("status") == 'ok':
+		return response.get('payload')  # return IP address from message payload field
+
+	elif response and response.get("status") == 'nodata':
+		log.error("No device with id '{}' found.".format(device_id))
+		return device_id
+	else:
+		log.info("No response from server. Trying to send data to device with ID '{}'.".format(device_id))
+		return device_id
 
 
 if __name__ == "__main__":
