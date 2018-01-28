@@ -10,6 +10,8 @@ import time
 from Log import Log
 from Config import Config
 from MqttHandler import MqttHandler
+from Task import Task
+from TaskScheduler import TaskScheduler
 
 
 class EspHubUnilib(object):
@@ -24,12 +26,14 @@ class EspHubUnilib(object):
 
 	def __init__(self, name="", device_id=None, config_path=None):
 		self.log = Log.get_logger()
-		self.config = Config(os.path.abspath(config_path)) if config_path else Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)).get_config()
+		self.config = Config(os.path.abspath(config_path)) if config_path else Config(os.path.abspath('.')).get_config()
 
 		self.id = device_id if device_id else self._get_device_id()
 		self.name = name
 
-		self._abilities = []
+		self.tasks = self._parse_tasks()  # load abilities from config file
+		self._abilities = [task.name for task in self.tasks]
+
 		# indicate if hello message has been sent to server and client wait for hello response
 		self.waiting_for_hello_response = threading.Event()
 		self.server_candidate = None  # candidate for future server received from UDP discovery
@@ -40,7 +44,7 @@ class EspHubUnilib(object):
 		# try to connect with config values
 		if broker_info and self.check_server(broker_info.get('address'), broker_info.get('port')):
 			self.log.info("Using config values for connection: server = {}, port = {}".format(broker_info.get('address'), broker_info.get('port')))
-			validation_interval = self.config.getint('general', 'accept-timeout', fallback=20)
+			validation_interval = self.config.getint('common', 'accept-timeout', fallback=20)
 
 			# wait for server accept msg
 			if self.waiting_for_hello_response.wait(timeout=validation_interval):
@@ -51,42 +55,45 @@ class EspHubUnilib(object):
 		else:
 			self.server_discovery()
 
-		self._create_pipes()
-
+		task_scheduler = TaskScheduler()
+		for task in self.tasks:
+			task_scheduler.add_task(task)
 
 		self.log.debug("Starting mainloop.")
 		while self.validated:
-			time.sleep(3)
+			time.sleep(3) # todo sleep for time from task scheduler
+			# todo get current task and call this function
+			# todo return result over mqtt
 
 	# TODO send telemetry
 
-	def _create_pipes(self):
+	def _parse_tasks(self):
 		"""
-		Create pipes in project home dir. One pipe for each registered ability.
-		:return:
+		Load config file, parse all abilities sections and create list of Tasks
+		:return: List of Task objects.
 		"""
-		root_dir = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR)
+		tasks = []
+		for section in self.config.sections():
+			if not section == 'common':
+				external_module = __import__(self.config.get(section, 'script_path'))
+				event = getattr(external_module, self.config.get(section, 'function', fallback='run'))
+				# todo handle variouse exception during loading module, module cannot have .py appendix
 
-		pipe_paths = []
-		try:
-			for ability in self.abilities:
-				pipe_path = os.path.join(root_dir, ability)
-				if not os.path.exists(pipe_path):
-					os.mkfifo(pipe_path)
-				pipe_paths.append(pipe_path)
+				task = Task(section,
+							self.config.getint(section, 'interval'),
+							event)
+				tasks.append(task)
 
-				self.log.info("Creating pipes.")
-
-		# TODO open write stream into pipe - hold pipe in blocking reading state
-		except AttributeError as e:
-			self.log.error("Pipeline interface is not supported on this OS. Feature sending data over pipeline will be disabled.")
-
-		return pipe_paths
+		return tasks
 
 	def _get_broker_config(self):
+		"""
+		Obtain broker address and broker port from configuration file.
+		:return: Dictionary contains key 'address' and 'port'
+		"""
 		try:
-			return {'address': self.config.get('broker', 'address'),
-					'port': self.config.getint('broker', 'port')}
+			return {'address': self.config.get('common', 'broker-address'),
+					'port': self.config.getint('common', 'broker-port')}
 		except configparser.NoSectionError:
 			self.log.info("No broker section in config file found.")
 			return None
@@ -193,7 +200,7 @@ class EspHubUnilib(object):
 
 				# try to use server from incoming message
 				if self.check_server(incoming_data.get('ip'), incoming_data.get('port')):
-					validation_interval = self.config.getint('general', 'accept-timeout', fallback=20)
+					validation_interval = self.config.getint('common', 'accept-timeout', fallback=20)
 
 					# wait for hello response
 					if self.waiting_for_hello_response.wait(timeout=validation_interval):
@@ -289,5 +296,4 @@ class EspHubUnilib(object):
 
 if __name__ == "__main__":
 	lib = EspHubUnilib('test device')
-	lib.abilities = ['test']
 	lib.start()
