@@ -58,10 +58,16 @@ class EspHubUnilib(object):
 		task_scheduler = TaskScheduler()
 		for task in self.tasks:
 			task_scheduler.add_task(task)
+		task_scheduler.add_task(Task("telemetry", 15, self.send_telemetry_data))
 
 		self.log.debug("Starting mainloop.")
 		while self.validated:
-			time.sleep(3) # todo sleep for time from task scheduler
+			time.sleep(task_scheduler.get_time_to_next_task())
+			task = task_scheduler.get_task()
+			result = task.event()
+			if result:
+				self.send_data(task.name, result)
+
 			# todo get current task and call this function
 			# todo return result over mqtt
 
@@ -283,6 +289,8 @@ class EspHubUnilib(object):
 		local_ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")]
 					 or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in
 						  [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]))[0]
+
+		# todo send telemetry data to telemetry topic
 
 	def _write_server_to_config(self, ip, port):
 		config_handler = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR))
