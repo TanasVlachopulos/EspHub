@@ -28,7 +28,7 @@ class TaskScheduler(object):
 		"""
 		self._find_next_task()
 		sleep_time = self._next_task.next_run - datetime.now()
-		return sleep_time.seconds if sleep_time.days >= 0 else 0
+		return sleep_time.seconds + (sleep_time.microseconds / 1000000) if sleep_time.days >= 0 else 0
 
 	def get_task(self):
 		"""
@@ -37,6 +37,7 @@ class TaskScheduler(object):
 		"""
 		self._find_next_task()
 
+		# task is not ready yet
 		if self._next_task.next_run > datetime.now():
 			return None
 

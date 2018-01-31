@@ -64,12 +64,17 @@ class EspHubUnilib(object):
 		while self.validated:
 			time.sleep(task_scheduler.get_time_to_next_task())
 			task = task_scheduler.get_task()
+			if not task:
+				self.log.warning("Internal problem: scheduler woke up to soon.")
+				continue
+
+			self.log.debug("Starting scheduled task '{}'".format(task.name))
 			result = task.event()
 			if result:
 				self.send_data(task.name, result)
 
-			# todo get current task and call this function
-			# todo return result over mqtt
+		# todo get current task and call this function
+		# todo return result over mqtt
 
 	# TODO send telemetry
 
@@ -81,13 +86,29 @@ class EspHubUnilib(object):
 		tasks = []
 		for section in self.config.sections():
 			if not section == 'common':
-				external_module = __import__(self.config.get(section, 'script_path'))
-				event = getattr(external_module, self.config.get(section, 'function', fallback='run'))
-				# todo handle variouse exception during loading module, module cannot have .py appendix
+				# load external python module
+				try:
+					script_path = self.config.get(section, 'script_path')
 
-				task = Task(section,
-							self.config.getint(section, 'interval'),
-							event)
+					# remove .py appendix if is in a name
+					name_parts = script_path.split('.')
+					appendix = name_parts[-1] if len(name_parts) > 1 else ""
+					if appendix == "py":
+						script_path = '.'.join(name_parts[:-1])
+
+					external_module = __import__(script_path)
+				except ImportError:
+					self.log.error("Module '{}' cannot be found or it is invalid module.".format(script_path))
+					exit(1)
+
+				# load function from this module
+				try:
+					event = getattr(external_module, self.config.get(section, 'function', fallback='run'))
+				except AttributeError as e:
+					self.log.error("Parsing ability functions failed: {}".format(e))
+					exit(1)
+
+				task = Task(section, self.config.getint(section, 'interval', fallback=10), event)
 				tasks.append(task)
 
 		return tasks
@@ -263,8 +284,7 @@ class EspHubUnilib(object):
 				self.validated = True
 				self.waiting_for_hello_response.set()
 			else:
-				print(self.server_candidate)
-				self.log.error("Server candidate does not match Hello reply.")
+				self.log.error("Server candidate '{}' does not match Hello reply.".format(self.server_candidate))
 
 		except json.JSONDecodeError as e:
 			self.log.error("Cannot parse hello reply. Error: {}".format(e))
@@ -290,7 +310,7 @@ class EspHubUnilib(object):
 					 or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in
 						  [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]))[0]
 
-		# todo send telemetry data to telemetry topic
+	# todo send telemetry data to telemetry topic
 
 	def _write_server_to_config(self, ip, port):
 		config_handler = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR))
