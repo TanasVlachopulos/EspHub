@@ -1,7 +1,7 @@
 import configparser
 import threading
-import select
 import os
+import fcntl
 import socket
 import json
 import uuid
@@ -73,8 +73,8 @@ class EspHubUnilib(object):
 			if result:
 				self.send_data(task.name, result)
 
-		# todo get current task and call this function
-		# todo return result over mqtt
+	# todo get current task and call this function
+	# todo return result over mqtt
 
 	# TODO send telemetry
 
@@ -309,6 +309,13 @@ class EspHubUnilib(object):
 		local_ip = (([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")]
 					 or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in
 						  [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]))[0]
+
+		mac = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0, 8 * 6, 8)][::-1])
+
+		hostname = socket.gethostname()
+
+		response = {"local_ip": local_ip, 'mac': mac, 'hostname': hostname}
+		self.send_json("telemetry", json.dumps(response))
 
 	# todo send telemetry data to telemetry topic
 
