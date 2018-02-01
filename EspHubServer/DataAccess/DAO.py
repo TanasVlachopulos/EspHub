@@ -158,11 +158,18 @@ class Record(Base):
 	:type device: Device
 	"""
 	__tablename__ = 'record'
+	SUM_NONE = 'none'
+	SUM_MINUTELY = 'minutely'
+	SUM_HOURLY = 'hourly'
+	SUM_DAILY = 'daily'
+	SUM_WEEKLY = 'weekly'
+	SUM_MONTHLY = 'monthly'
 
 	id = Column('id', Integer, primary_key=True)
 	time = Column('time', DateTime, default=datetime.now())
 	name = Column('type', String(64))
 	value = Column('value', String(256))
+	summarized = Column('summarized', String(16), default=SUM_NONE)
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
 	device = relationship(Device, back_populates='records')
