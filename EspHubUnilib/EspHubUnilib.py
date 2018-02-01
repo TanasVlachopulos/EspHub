@@ -1,11 +1,12 @@
 import configparser
 import threading
 import os
-import fcntl
 import socket
 import json
 import uuid
 import time
+
+import click
 
 from Log import Log
 from Config import Config
@@ -24,9 +25,9 @@ class EspHubUnilib(object):
 	_SETTING_DIR = '.esp_hub_unilib'
 	DISCOVERY_PORT = 11114
 
-	def __init__(self, name="", device_id=None, config_path=None):
-		self.log = Log.get_logger()
-		self.config = Config(os.path.abspath(config_path)) if config_path else Config(os.path.abspath('.')).get_config()
+	def __init__(self, name="", device_id=None, config=None, log=None):
+		self.log = log
+		self.config = config
 
 		self.id = device_id if device_id else self._get_device_id()
 		self.name = name
@@ -60,7 +61,7 @@ class EspHubUnilib(object):
 			task_scheduler.add_task(task)
 		task_scheduler.add_task(Task("telemetry", 15, self.send_telemetry_data))
 
-		self.log.debug("Starting mainloop.")
+		self.log.info("Starting mainloop.")
 		while self.validated:
 			time.sleep(task_scheduler.get_time_to_next_task())
 			task = task_scheduler.get_task()
@@ -68,7 +69,7 @@ class EspHubUnilib(object):
 				self.log.warning("Internal problem: scheduler woke up to soon.")
 				continue
 
-			self.log.debug("Starting scheduled task '{}'".format(task.name))
+			self.log.info("Starting scheduled task '{}'".format(task.name))
 			result = task.event()
 			if result:
 				self.send_data(task.name, result)
@@ -122,10 +123,10 @@ class EspHubUnilib(object):
 			return {'address': self.config.get('common', 'broker-address'),
 					'port': self.config.getint('common', 'broker-port')}
 		except configparser.NoSectionError:
-			self.log.info("No broker section in config file found.")
+			self.log.error("No common section in config file found.")
 			return None
 		except configparser.NoOptionError:
-			self.log.info("Config file missing some sections.")
+			self.log.info("No predefined broker info. Broker will be auto-discovered.")
 			return None
 
 	def _get_device_id(self):
@@ -267,7 +268,7 @@ class EspHubUnilib(object):
 		"""
 		Handler Accept message (response to Hello message) from server
 		"""
-		self.log.info("Receiving hello message.")
+		self.log.debug("Receiving hello message.")
 		try:
 			server_reply = json.loads(msg.payload.decode("utf-8"))
 
@@ -279,7 +280,7 @@ class EspHubUnilib(object):
 
 			# compare server candidate against hello message
 			if self.server_candidate == server_reply:
-				self.log.info("Hello response validated.")
+				self.log.debug("Hello response validated.")
 				self._write_server_to_config(server_reply.get('ip'), server_reply.get('port'))
 				self.validated = True
 				self.waiting_for_hello_response.set()
@@ -298,7 +299,7 @@ class EspHubUnilib(object):
 		msg = {'name': self.name,
 			   'id': self.id,
 			   'ability': self._abilities}
-		self.log.info("Sending hello message to server candidate.")
+		self.log.debug("Sending hello message to server candidate.")
 		self.mqtt_client.publish("{}{}".format(EspHubUnilib._MAIN_TOPIC, EspHubUnilib._HELLO_TOPIC), json.dumps(msg))
 
 	def send_telemetry_data(self):
@@ -329,6 +330,31 @@ class EspHubUnilib(object):
 		config_handler.write_config(config)
 
 
-if __name__ == "__main__":
-	lib = EspHubUnilib('test device')
+@click.command()
+@click.option('-n', '--name', type=str, required=False, help="Device name.")
+@click.option('-c', '--config', type=click.Path(exists=True), required=False, help="Path to config file (default is 'conf.ini' in project directory).")
+@click.option('-v', '--verbose', is_flag=True, default=False, help="Enable debug outputs.")
+@click.option('-r', '--reset', is_flag=True, help="Reset server settings. Clear device ID and server key.")
+def cli(name, config, verbose, reset):
+	conf = Config(os.path.abspath(config)) if config else Config(os.path.abspath('.')).get_config()
+	log = Log.get_logger(conf.get('common', 'log-path', fallback=None))
+
+	if reset:
+		device_id_path = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'device_uuid')
+		os.remove(device_id_path)
+		# TODO remove key of server (for new validation method)
+
+	if not name and not conf.get('common', 'device-name', fallback=None):
+		name = input("Enter device name: ")
+
+	if verbose:
+		log.setLevel("DEBUG")
+	else:
+		log.setLevel("INFO")
+
+	lib = EspHubUnilib(name, config=conf, log=log)
 	lib.start()
+
+
+if __name__ == "__main__":
+	cli()
