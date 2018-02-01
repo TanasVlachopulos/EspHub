@@ -42,9 +42,10 @@ class EspHubUnilib(object):
 
 	def start(self):
 		broker_info = self._get_broker_config()
+		server_key = self._get_server_key()
 		# try to connect with config values
-		if broker_info and self.check_server(broker_info.get('address'), broker_info.get('port')):
-			self.log.info("Using config values for connection: server = {}, port = {}".format(broker_info.get('address'), broker_info.get('port')))
+		if broker_info and server_key and self.check_server(broker_info.get('address'), broker_info.get('port'), server_key):
+			self.log.info("Using config values for connection: server = {}, port = {}, key = {}".format(broker_info.get('address'), broker_info.get('port'), server_key))
 			validation_interval = self.config.getint('common', 'accept-timeout', fallback=20)
 
 			# wait for server accept msg
@@ -73,11 +74,6 @@ class EspHubUnilib(object):
 			result = task.event()
 			if result:
 				self.send_data(task.name, result)
-
-	# todo get current task and call this function
-	# todo return result over mqtt
-
-	# TODO send telemetry
 
 	def _parse_tasks(self):
 		"""
@@ -149,6 +145,27 @@ class EspHubUnilib(object):
 			with open(id_file, 'w') as file:
 				file.write(uid)
 			return uid
+
+	def _get_server_key(self):
+		"""
+		Get server unique identification key from home folder.
+		:return: Server key.
+		"""
+		server_key_file = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'server_key')
+		if os.path.isfile(server_key_file):
+			with open(server_key_file, 'r') as f:
+				return f.read()
+		else:
+			return None
+
+	def _write_server_key(self, server_key):
+		"""
+		Write server key to home folder.
+		:param server_key: Server key
+		"""
+		server_key_file = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'server_key')
+		with open(server_key_file, 'w') as f:
+			f.write(server_key)
 
 	@property
 	def abilities(self):
@@ -227,16 +244,16 @@ class EspHubUnilib(object):
 				self.log.debug("Receiving UDP message from {}.".format(addr))
 
 				# try to use server from incoming message
-				if self.check_server(incoming_data.get('ip'), incoming_data.get('port')):
+				if self.check_server(incoming_data.get('ip'), incoming_data.get('port'), incoming_data.get('server_key')):
 					validation_interval = self.config.getint('common', 'accept-timeout', fallback=20)
 
 					# wait for hello response
 					if self.waiting_for_hello_response.wait(timeout=validation_interval):
-						self.log.info("Server {} has been validated.".format(incoming_data.get('ip')))
+						self.log.info("Server '{}' has been validated.".format(incoming_data.get('server_key')))
 						self.waiting_for_hello_response.clear()
 						break
 					else:
-						self.log.error("Server {} has not been validate in given time {} seconds.".format(incoming_data.get('ip'), validation_interval))
+						self.log.error("Server '{}' has not been validate in given time {} seconds.".format(incoming_data.get('server_key'), validation_interval))
 
 			except socket.timeout:
 				self.log.error("Server discovery timeout.")
@@ -244,7 +261,7 @@ class EspHubUnilib(object):
 			except ValueError:
 				self.log.warning("UDP discover message invalid format.")
 
-	def check_server(self, ip, port):
+	def check_server(self, ip, port, server_key):
 		"""
 		Check if server candidate from UDP discovery msg is valid MQTT server
 		:param ip: Server ip or hostname.
@@ -257,7 +274,7 @@ class EspHubUnilib(object):
 			client.register_topic("{}{}/{}".format(EspHubUnilib._MAIN_TOPIC, self.id, EspHubUnilib._ACCEPT_TOPIC),
 								  self.check_server_callback)
 			self.mqtt_client = client
-			self.server_candidate = {'ip': ip, 'port': port}
+			self.server_candidate = {'ip': ip, 'port': port, 'server_key': server_key}
 			self._generate_hello_msg()
 			return True
 		else:
@@ -279,9 +296,10 @@ class EspHubUnilib(object):
 			self.log.debug("Hello reply: {}".format(server_reply))
 
 			# compare server candidate against hello message
-			if self.server_candidate == server_reply:
+			if self.server_candidate.get('server_key') == server_reply.get('server_key'):
 				self.log.debug("Hello response validated.")
 				self._write_server_to_config(server_reply.get('ip'), server_reply.get('port'))
+				self._write_server_key(server_reply.get('server_key'))
 				self.validated = True
 				self.waiting_for_hello_response.set()
 			else:
@@ -318,8 +336,6 @@ class EspHubUnilib(object):
 		response = {"local_ip": local_ip, 'mac': mac, 'hostname': hostname}
 		self.send_json("telemetry", json.dumps(response))
 
-	# todo send telemetry data to telemetry topic
-
 	def _write_server_to_config(self, ip, port):
 		config_handler = Config(os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR))
 		config = config_handler.get_config()
@@ -341,8 +357,11 @@ def cli(name, config, verbose, reset):
 
 	if reset:
 		device_id_path = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'device_uuid')
-		os.remove(device_id_path)
-		# TODO remove key of server (for new validation method)
+		if os.path.isfile(device_id_path):
+			os.remove(device_id_path)
+		server_key_file = os.path.join(os.path.expanduser('~'), EspHubUnilib._SETTING_DIR, 'server_key')
+		if os.path.isfile(server_key_file):
+			os.remove(server_key_file)
 
 	if not name and not conf.get('common', 'device-name', fallback=None):
 		name = input("Enter device name: ")

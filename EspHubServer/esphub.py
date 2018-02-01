@@ -14,6 +14,7 @@ import json
 import time
 import click
 import signal
+import uuid
 
 # Variable for PeriodicDisplay task, is global due to signal_handling
 task_to_stop = []
@@ -44,9 +45,20 @@ def _device_discovery(endless=True):
 	"""
 	conf = Config.get_config()
 
+	key_file_path = conf.get("main", "server_key_file")
+	server_key = ""
+	if os.path.isfile(key_file_path):
+		with open(key_file_path, 'r') as f:
+			server_key = f.read()
+			log.info("Server key loaded from file: '{}'".format(server_key))
+	else:
+		log.critical("Server key file not found.")
+		return
+
 	msg = json.dumps({"name": conf.get('mqtt', 'server_name'),
 					  "ip": conf.get('mqtt', 'ip'),
-					  "port": conf.getint('mqtt', 'port')})
+					  "port": conf.getint('mqtt', 'port'),
+					  "server_key": server_key})
 
 	esp_discovery = Discovery.EspDiscovery(conf.get('discovery', 'broadcast'),
 										   conf.getint('discovery', 'discovery_port'),
@@ -80,6 +92,19 @@ def _collect_data(endless=True):
 @click.group()
 def cli():
 	"""EspHub home automation server"""
+
+	conf = Config.get_config()
+
+	# initiate server key if not exists
+	key_file_path = conf.get("main", "server_key_file")
+	if not os.path.isfile(key_file_path):
+		server_key = str(uuid.uuid4())
+		log.info("New server ID initiating: '{}'".format(server_key))
+		with open(key_file_path, 'w') as f:
+			f.write(server_key)
+	else:
+		log.info('Loading existing server ID.')
+
 	# magic with system path
 	sys.path.append('..')
 	sys.path.append('/EspHubServer')
@@ -150,7 +175,7 @@ def collect_data(endless):
 	log.info("start collecting data ...")
 	# handle interrupt signal when user press ctrl+c
 	signal.signal(signal.SIGINT, _exit_signal_handler)
-	
+
 	_collect_data(endless)
 
 

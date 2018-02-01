@@ -8,6 +8,8 @@ from DeviceCom.MqttApi import MqttApi
 from Config.Config import Config
 from Tools.Log import Log
 import json
+import os
+import uuid
 from datetime import datetime
 
 conf = Config.get_config()
@@ -26,6 +28,15 @@ class DataCollector(object):
 
 		self.mqtt = MessageHandler(conf.get('mqtt', 'ip'), conf.getint('mqtt', 'port'))
 		self.mqtt.register_topics(self.topics)
+
+		self.server_key = ""
+		key_file_path = conf.get("main", "server_key_file")
+		if os.path.isfile(key_file_path):
+			with open(key_file_path, 'r') as f:
+				self.server_key = f.read()
+		else:
+			log.critical("Server key file not found.")
+			return
 
 	@staticmethod
 	def extract_payload(msg):
@@ -85,7 +96,8 @@ class DataCollector(object):
 				# device is in database and is validated
 				log.info("Device {} is already validated. Sending Hello message.".format(device.name))
 				reply = {'ip': conf.get('mqtt', 'ip'),
-						 'port': conf.get('mqtt', 'port')}
+						 'port': conf.get('mqtt', 'port'),
+						 'server_key': self.server_key}
 
 				# TODO replace this with class DataSender
 				self.mqtt.publish("esp_hub/device/{}/accept".format(device.id), json.dumps(reply))
