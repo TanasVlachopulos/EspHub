@@ -159,11 +159,11 @@ class Record(Base):
 	"""
 	__tablename__ = 'record'
 	SUM_NONE = 'none'
-	SUM_MINUTELY = 'minutely'
-	SUM_HOURLY = 'hourly'
-	SUM_DAILY = 'daily'
-	SUM_WEEKLY = 'weekly'
-	SUM_MONTHLY = 'monthly'
+	SUM_MINUTELY = 'T'
+	SUM_HOURLY = 'H'
+	SUM_DAILY = 'D'
+	SUM_WEEKLY = 'W'
+	SUM_MONTHLY = 'M'
 
 	id = Column('id', Integer, primary_key=True)
 	time = Column('time', DateTime, default=datetime.now())
