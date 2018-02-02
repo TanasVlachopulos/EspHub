@@ -62,6 +62,8 @@ class EspHubUnilib(object):
 			task_scheduler.add_task(task)
 		task_scheduler.add_task(Task("telemetry", 15, self.send_telemetry_data))
 
+		self.send_telemetry_data()  # send telemetry data before looping to inform server about self existence
+
 		self.log.info("Starting mainloop.")
 		while self.validated:
 			time.sleep(task_scheduler.get_time_to_next_task())
@@ -70,8 +72,8 @@ class EspHubUnilib(object):
 				self.log.warning("Internal problem: scheduler woke up to soon.")
 				continue
 
-			self.log.info("Starting scheduled task '{}'".format(task.name))
 			result = task.event()
+			self.log.info("Starting scheduled task '{}' with result '{}'.".format(task.name, result))
 			if result:
 				self.send_data(task.name, result)
 
