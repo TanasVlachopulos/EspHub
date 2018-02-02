@@ -44,7 +44,7 @@ class EspHubUnilib(object):
 		broker_info = self._get_broker_config()
 		server_key = self._get_server_key()
 		# try to connect with config values
-		if broker_info and server_key and self.check_server(broker_info.get('address'), broker_info.get('port'), server_key):
+		if broker_info and self.check_server(broker_info.get('address'), broker_info.get('port'), server_key):
 			self.log.info("Using config values for connection: server = {}, port = {}, key = {}".format(broker_info.get('address'), broker_info.get('port'), server_key))
 			validation_interval = self.config.getint('common', 'accept-timeout', fallback=20)
 
@@ -298,14 +298,21 @@ class EspHubUnilib(object):
 			self.log.debug("Hello reply: {}".format(server_reply))
 
 			# compare server candidate against hello message
-			if self.server_candidate.get('server_key') == server_reply.get('server_key'):
+			if server_reply.get('server_key') and self.server_candidate.get('server_key') == server_reply.get('server_key'):
 				self.log.debug("Hello response validated.")
 				self._write_server_to_config(server_reply.get('ip'), server_reply.get('port'))
 				self._write_server_key(server_reply.get('server_key'))
 				self.validated = True
 				self.waiting_for_hello_response.set()
 			else:
-				self.log.error("Server candidate '{}' does not match Hello reply.".format(self.server_candidate))
+				# prompt user to validate new server key
+				if click.confirm("Do you want to connect to server '{}' (key: '{}')?".format(server_reply.get('name'), server_reply.get('server_key'))):
+					self._write_server_to_config(server_reply.get('ip'), server_reply.get('port'))
+					self._write_server_key(server_reply.get('server_key'))
+					self.validated = True
+					self.waiting_for_hello_response.set()
+				else:
+					self.log.warning("No valid server to connect.")
 
 		except json.JSONDecodeError as e:
 			self.log.error("Cannot parse hello reply. Error: {}".format(e))

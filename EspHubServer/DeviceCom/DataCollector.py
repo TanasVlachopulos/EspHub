@@ -97,7 +97,8 @@ class DataCollector(object):
 				log.info("Device {} is already validated. Sending Hello message.".format(device.name))
 				reply = {'ip': conf.get('mqtt', 'ip'),
 						 'port': conf.get('mqtt', 'port'),
-						 'server_key': self.server_key}
+						 'server_key': self.server_key,
+						 'name': conf.get('mqtt', 'server_name', fallback="Empty server name")}
 
 				# TODO replace this with class DataSender
 				self.mqtt.publish("esp_hub/device/{}/accept".format(device.id), json.dumps(reply))
