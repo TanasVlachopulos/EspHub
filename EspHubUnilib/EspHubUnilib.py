@@ -74,7 +74,7 @@ class EspHubUnilib(object):
 
 			result = task.event()
 			self.log.info("Starting scheduled task '{}' with result '{}'.".format(task.name, result))
-			if result:
+			if not result == None:
 				self.send_data(task.name, result)
 
 	def _parse_tasks(self):
