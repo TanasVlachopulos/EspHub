@@ -1,6 +1,7 @@
 from sqlalchemy import desc, and_, func
 from DataAccess.DAO import *
 from Tools.Log import Log
+from datetime import datetime
 
 log = Log.get_logger()
 
@@ -147,6 +148,26 @@ def get_record_from_device(session, device_id, value_type=None, order='desc', li
 	else:
 		return session.query(Record).filter(Record.device_id == device_id).order_by(order_field).limit(limit).all()
 
+def get_record_from_device_between(session, device_id, from_date, to_date, value_type=None, order='desc'):
+	"""
+	Get Records for given device_id.
+	:param session: Database session.
+	:param device_id: ID of parent Device.
+	:type device_id: str
+	:param from_date: Record from this date.
+	:type from_date: datetime
+	:param to_date: Record to this date
+	:type to_date: datetime
+	:param value_type: Value 'name' from DAO Record.
+	:type value_type: str
+	:param order: Order of returned records ordered by parameter 'time'. Default is 'desc' any other value means ascending order.
+	:return: List of DAO Record objects.
+	"""
+	order_field = desc(Record.time) if order == 'desc' else Record.time
+	if value_type:
+		return session.query(Record).filter(and_(Record.device_id == device_id, Record.name == value_type, Record.time.between(from_date, to_date))).order_by(order_field).all()
+	else:
+		return session.query(Record).filter(and_(Record.device_id == device_id, Record.device_id.between(from_date, to_date))).order_by(order_field).all()
 
 def insert_record(session, record):
 	"""
