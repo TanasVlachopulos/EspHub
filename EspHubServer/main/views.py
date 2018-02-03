@@ -12,6 +12,8 @@ from Tools.Log import Log
 from Plots import DisplayPlot
 from main import forms
 
+from datetime import datetime, timedelta
+
 # TODO handle 404 page not found error
 # TODO maximalizovat predavani hodnot do templatu - snizit pocet leteraru v templatech
 
@@ -320,7 +322,9 @@ def records_api(request, device_id, ability):
 	:param ability: name of ability
 	:return: JSON with chart parameters and plot data with values and time lables
 	"""
-	response = data_parsing.get_records_for_charts(device_id, ability, 0, 0)
+	now = datetime.now()
+	past = now - timedelta(1)
+	response = data_parsing.get_records_for_charts(device_id, ability, past, now)
 
 	# convert datetime object to isoformat string
 	response['chart_type'] = 'line'

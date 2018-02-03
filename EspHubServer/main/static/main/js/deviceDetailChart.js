@@ -7,7 +7,8 @@ function deviceDetailChart(canvasId) {
 
     $.getJSON(url, function (result) {
         if (!$.isEmptyObject(result)) {
-            _plotChart(result, canvasId);
+            // _plotChart(result, canvasId);
+            _eChart(result, canvasId);
         }
         else {
             return null;
@@ -56,3 +57,73 @@ function _plotChart(result, canvasId) {
     }
 }
 
+function _eChart(result, canvasId) {
+
+    var myChart = echarts.init(document.getElementById(canvasId));
+
+    var data = result['values'];
+    var date = result['labels'];
+
+    option = {
+        tooltip: {
+            trigger: 'axis',
+            position: function (pt) {
+                return [pt[0], '10%'];
+            }
+        },
+
+        toolbox: {
+            feature: {
+                dataZoom: {
+                    yAxisIndex: 'none'
+                },
+                restore: {},
+                saveAsImage: {}
+            }
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: date
+        },
+        yAxis: {
+            type: 'value',
+            boundaryGap: [0, '100%']
+        },
+        dataZoom: [{
+            type: 'inside',
+            start: 75,
+            end: 100
+        }, {
+            start: 0,
+            end: 10,
+            handleSize: '80%',
+            handleStyle: {
+                color: '#fff',
+                shadowBlur: 3,
+                shadowColor: 'rgba(0, 0, 0, 0.6)',
+                shadowOffsetX: 2,
+                shadowOffsetY: 2
+            }
+        }],
+        series: [
+            {
+                name: 'data content',
+                type: 'line',
+                smooth: true,
+                symbol: 'none',
+                sampling: 'average',
+                itemStyle: {
+                    normal: {
+                        color: 'rgb(16, 70, 131)'
+                    }
+                },
+
+                data: data
+            }
+        ]
+    };
+
+    // use configuration item and data specified to show chart
+    myChart.setOption(option);
+}

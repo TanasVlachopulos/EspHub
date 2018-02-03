@@ -4,6 +4,7 @@ from DataAccess import DBA, DAO, DAC
 from Config import Config
 from Plots import DisplayPlot
 from Tools.Log import Log
+from Tools import DateConvert
 
 conf = Config.get_config()
 log = Log.get_logger()
@@ -56,13 +57,14 @@ def get_records_for_charts(device_id, value_type, from_date, to_date):
 	# TODO implement time interval from date - to date
 
 	with DAC.keep_session() as db:
-		records = DBA.get_record_from_device(db, device_id, value_type, limit=conf.getint('db', 'default_records_limit'))
+		# records = DBA.get_record_from_device(db, device_id, value_type, limit=conf.getint('db', 'default_records_limit'))
+		records = DBA.get_record_from_device_between(db, device_id, from_date, to_date, value_type, order='up')
 		values = [float(record.value) for record in records]
-		values.reverse()
+		# values.reverse()
 
 		response = {
 			# convert datetime objects to isoformat strings in reverse order
-			'labels': list(reversed([str(record.time) for record in records])),
+			'labels': [DateConvert.format_datetime(record.time, template='now') for record in records],
 			'values': values,
 		}
 
