@@ -6,9 +6,13 @@ from main import forms
 from Config.Config import Config
 from Tools.Log import Log
 from DataAccess import DAC, DBA
+from datetime import datetime, timedelta
+from main import data_parsing
+import json
 
 conf = Config.get_config()
 log = Log.get_logger()
+
 
 def edit_device_detail_post(request, device_id):
 	"""
@@ -41,3 +45,32 @@ def edit_device_detail_post(request, device_id):
 		else:
 			log.warning("form is invalid")
 			return HttpResponse('fail')
+
+
+def get_values(request, device_id, ability):
+	"""
+	Provide access to device records values.
+	Return values as a JSON with list of values and list of time labels (data for rendering plots).
+	:param request:
+	:param device_id: ID of device.
+	:param ability: Requested Ability name.
+	:return:
+	"""
+	# TODO parse get query and extract from_date, to_date, summarization arguments
+	args = {}
+
+	if args.get("to_date"):
+		to_date = datetime.now()  # TODO parse to_date
+	else:
+		to_date = datetime.now()
+
+	if args.get("from_date"):
+		from_date = to_date - timedelta(1)  # TODO parse from_date
+	else:
+		from_date = to_date - timedelta(1)  # 1 day history
+
+	if from_date > to_date:
+		from_date, to_date = to_date, from_date  # swap dates
+
+	response = data_parsing.get_records_for_charts(device_id, ability, from_date, to_date)
+	return HttpResponse(json.dumps(response))

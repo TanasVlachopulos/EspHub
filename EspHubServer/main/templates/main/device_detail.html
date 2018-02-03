@@ -44,10 +44,29 @@
         <div id="first-tab-value" data-value="canvas-tab-{{ actual_values.0.name }}" hidden></div>
         {% for value in actual_values %}
             <div id="tab-{{ value.name }}" class="col s12 grey lighten-4">
+
+                {#                <div class="row">#}
+                {#                    <div class="row s6">#}
+                <div class="input-field">
+                    <input id="date-range-input" type="text" data-bind="daterangepicker: datepickerbtn"/>
+                    <label for="date-range-input">Select date range</label>
+                </div>
+                <div class="input-field">
+                    <select id="summarize-select">
+                        <option value="" disabled selected>Choose your option</option>
+                        <option value="1">Now</option>
+                        <option value="2">Minutes</option>
+                        <option value="3">Hours</option>
+                    </select>
+                    <label for="summarize-select">Materialize Select</label>
+                </div>
+                {#                    </div>#}
+                {#                </div>#}
+
                 <div style="width: 100%;">
-{#                    <canvas id="canvas-tab-{{ value.name }}" data-url="{% url 'main:records_api' device.id value.name %}"#}
-{#                            height="150"></canvas>#}
-                    <div id="canvas-tab-{{ value.name }}" style="width: 100%;height:600px;" data-url="{% url 'main:records_api' device.id value.name %}"></div>
+                    {#                    <canvas id="canvas-tab-{{ value.name }}" data-url="{% url 'main:records_api' device.id value.name %}"#}
+                    {#                            height="150"></canvas>#}
+                    <div id="canvas-tab-{{ value.name }}" style="width: 100%;height:600px;" data-url="{% url 'Apis:get_values' device.id value.name %}"></div>
                 </div>
             </div>
         {% endfor %}
@@ -55,10 +74,15 @@
     </div>
 
     {% load static %} {# load javascript #}
+    <link type="text/css" rel="stylesheet" href="{% static 'main/css/daterangepicker.min.css' %}">
     {#    import ChartJS plot library#}
     <script type="text/javascript" src="{% static 'main/js_libs/Chart.bundle.js' %}"></script>
     {#    import eChart plot library#}
     <script type="text/javascript" src="{% static 'main/js_libs/echarts.common.min.js' %}"></script>
+    {# daterange picker dependency #}
+    <script type="text/javascript" src="{% static 'main/js_libs/knockout-3.4.2.js' %}"></script>
+    {# date range picker #}
+    <script type="text/javascript" src="{% static 'main/js_libs/daterangepicker.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js_libs/moment.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/jquery.cookie.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/updateDeviceStatus.js' %}"></script>
@@ -68,6 +92,15 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
+            $('select').material_select();
+
+            $("#date-range-input").daterangepicker({
+                minDate: moment().subtract(2, 'years'),
+                callback: function (startDate, endDate, period) {
+                    $(this).val(startDate.format('L') + ' – ' + endDate.format('L'));
+                }
+            });
+
             updateDeviceStatus("{% url 'main:telemetry_api' device.id %}", {{ device_status_interval }});
             updateDeviceValues("{% url 'main:device_actual_values_api' device.id %}", {{ device_values_interval }});
 

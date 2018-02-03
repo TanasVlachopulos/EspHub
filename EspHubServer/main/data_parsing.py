@@ -45,7 +45,7 @@ def get_actual_device_values(device_id, io_type='all'):
 	return device_values
 
 
-def get_records_for_charts(device_id, value_type, from_date, to_date):
+def get_records_for_charts(device_id, value_type, from_date, to_date, summarization=None):
 	"""
 	Get record from database for plot and charts
 	:param device_id: device ID
@@ -57,14 +57,13 @@ def get_records_for_charts(device_id, value_type, from_date, to_date):
 	# TODO implement time interval from date - to date
 
 	with DAC.keep_session() as db:
-		# records = DBA.get_record_from_device(db, device_id, value_type, limit=conf.getint('db', 'default_records_limit'))
-		records = DBA.get_record_from_device_between(db, device_id, from_date, to_date, value_type, order='up')
+		records = DBA.get_record_from_device_between(db, device_id, from_date, to_date, value_type, order='asc')
 		values = [float(record.value) for record in records]
-		# values.reverse()
 
+		time_template = summarization if summarization else 'now'
 		response = {
-			# convert datetime objects to isoformat strings in reverse order
-			'labels': [DateConvert.format_datetime(record.time, template='now') for record in records],
+			# convert datetime objects to string according to summarization type
+			'labels': [DateConvert.format_datetime(record.time, template=time_template) for record in records],
 			'values': values,
 		}
 
