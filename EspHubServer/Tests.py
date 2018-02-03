@@ -1,11 +1,9 @@
 import json
-
 from sqlalchemy import desc
-
 from DataAccess import DBA, DAC, DAO
 import time
 from Config.Config import Config
-from datetime import datetime
+from datetime import datetime, timedelta
 
 if __name__ == '__main__':
 	conf = Config.get_config()
@@ -13,26 +11,32 @@ if __name__ == '__main__':
 	# print(section)
 
 	with DAC.keep_session() as db:
-		devices = db.query(DAO.Device, DAO.Ability).join(DAO.Device.abilities).filter(DAO.Ability.category == DAO.Ability.CATEGORY_DISPLAY).all()
-		response = []
-		for device, ability in devices:
-			# print(device.serialize(), ability.serialize())
-			response.append({'id': device.id, 'name': device.name, 'ability_name': ability.name, 'ability_user_name': ability.user_name, 'ability_description': ability.description})
+		now = datetime.now()
+		past = now - timedelta(1)
+		print(past)
+		records = DBA.get_record_from_device_between(db, '6621b8a0-b0ff-49f8-ac6f-06efaf4b131a', past, now, 'weather_karvina', order='up')
+		print(records)
 
-		print(response)
+# with DAC.keep_session() as db:
+# 	devices = db.query(DAO.Device, DAO.Ability).join(DAO.Device.abilities).filter(DAO.Ability.category == DAO.Ability.CATEGORY_DISPLAY).all()
+# 	response = []
+# 	for device, ability in devices:
+# 		# print(device.serialize(), ability.serialize())
+# 		response.append({'id': device.id, 'name': device.name, 'ability_name': ability.name, 'ability_user_name': ability.user_name, 'ability_description': ability.description})
+#
+# 	print(response)
 
-	# with DAC.keep_session() as db:
-	# 	db.add(DAO.Record(name='switch', value='on', device_id='828530', time=datetime.now()))
+# with DAC.keep_session() as db:
+# 	db.add(DAO.Record(name='switch', value='on', device_id='828530', time=datetime.now()))
 
-	# with DAC.keep_session() as db:
-	# 	# record = db.query(DAO.Record).get(375)
-	# 	device = DBA.get_device(db, '383646ee-fe07-4660-940e-51f5b33a6cf6')
-	# 	print(device)
-	#
-	# 	records = DBA.get_record_from_device(db, '828530', 'switch', limit=5)
-	# 	for record in records:
-	# 		print(record.id, record.time)
-
+# with DAC.keep_session() as db:
+# 	# record = db.query(DAO.Record).get(375)
+# 	device = DBA.get_device(db, '383646ee-fe07-4660-940e-51f5b33a6cf6')
+# 	print(device)
+#
+# 	records = DBA.get_record_from_device(db, '828530', 'switch', limit=5)
+# 	for record in records:
+# 		print(record.id, record.time)
 
 # with DAC.keep_session() as dbs:
 # 	dev = DAO.Device(id='dev1234', name='My Test device', provided_func=['temp', 'hum'], status=DAO.Device.VALIDATED)
