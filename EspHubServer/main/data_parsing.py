@@ -5,6 +5,7 @@ from Config import Config
 from Plots import DisplayPlot
 from Tools.Log import Log
 from Tools import DateConvert
+from DataProcessing import TimeSeriesOps
 
 conf = Config.get_config()
 log = Log.get_logger()
@@ -58,15 +59,19 @@ def get_records_for_charts(device_id, value_type, from_date, to_date, summarizat
 
 	with DAC.keep_session() as db:
 		records = DBA.get_record_from_device_between(db, device_id, from_date, to_date, value_type, order='asc')
-		values = [float(record.value) for record in records]
 
-		time_template = summarization if summarization else 'now'
 		response = {
 			# convert datetime objects to string according to summarization type
-			'labels': [DateConvert.format_datetime(record.time, template=time_template) for record in records],
-			'values': values,
+			# 'labels': [DateConvert.format_datetime(record.time, template=time_template) for record in records],
+			'labels': [record.time for record in records],
+			'values': [float(record.value) for record in records],
 		}
 
+		if summarization:
+			response = TimeSeriesOps.resample_data_vectors(response, 'labels', summarization)
+
+		time_template = summarization if summarization else 'now'
+		response['labels'] = [DateConvert.format_datetime(label, time_template) for label in response['labels']]
 		return response
 
 

@@ -4,6 +4,7 @@ from DataAccess import DBA, DAC, DAO
 import time
 from Config.Config import Config
 from datetime import datetime, timedelta
+from main import data_parsing
 
 if __name__ == '__main__':
 	conf = Config.get_config()
@@ -13,10 +14,9 @@ if __name__ == '__main__':
 	with DAC.keep_session() as db:
 		now = datetime.now()
 		past = now - timedelta(1)
-		print(past)
-		records = DBA.get_record_from_device_between(db, '6621b8a0-b0ff-49f8-ac6f-06efaf4b131a', past, now, 'weather_karvina', order='up')
-		print(records)
-
+		records = data_parsing.get_records_for_charts('6621b8a0-b0ff-49f8-ac6f-06efaf4b131a', 'weather_karvina', past, now, summarization='hourly')
+		print(json.dumps(records))
+#
 # with DAC.keep_session() as db:
 # 	devices = db.query(DAO.Device, DAO.Ability).join(DAO.Device.abilities).filter(DAO.Ability.category == DAO.Ability.CATEGORY_DISPLAY).all()
 # 	response = []

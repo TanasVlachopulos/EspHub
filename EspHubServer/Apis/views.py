@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseBadRequest
 from django.urls import reverse
 from django.forms import formset_factory
 from main import forms
@@ -56,21 +56,26 @@ def get_values(request, device_id, ability):
 	:param ability: Requested Ability name.
 	:return:
 	"""
-	# TODO parse get query and extract from_date, to_date, summarization arguments
-	args = {}
+	DATE_FORMAT = "%d.%m.%Y"
 
-	if args.get("to_date"):
-		to_date = datetime.now()  # TODO parse to_date
-	else:
-		to_date = datetime.now()
+	try:
+		if request.GET.get("to_date"):
+			to_date = datetime.strptime(request.GET.get('to_date'), DATE_FORMAT)
+		else:
+			to_date = datetime.now()
 
-	if args.get("from_date"):
-		from_date = to_date - timedelta(1)  # TODO parse from_date
-	else:
-		from_date = to_date - timedelta(1)  # 1 day history
+		if request.GET.get("from_date"):
+			print('selecting from date')
+			from_date = datetime.strptime(request.GET.get('from_date'), DATE_FORMAT)
+		else:
+			from_date = to_date - timedelta(1)  # 1 day history
 
-	if from_date > to_date:
-		from_date, to_date = to_date, from_date  # swap dates
+		if from_date > to_date:
+			from_date, to_date = to_date, from_date  # swap dates
+	except ValueError as e:
+		log.error("Parsing date parameter fail: {}".format(e))
+		return HttpResponseBadRequest("Parsing date parameter fail: {}".format(e))
 
-	response = data_parsing.get_records_for_charts(device_id, ability, from_date, to_date)
+	summarize = request.GET.get('summarize')
+	response = data_parsing.get_records_for_charts(device_id, ability, from_date, to_date, summarization=summarize)
 	return HttpResponse(json.dumps(response))
