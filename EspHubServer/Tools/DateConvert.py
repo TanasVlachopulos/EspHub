@@ -1,10 +1,11 @@
 from datetime import datetime
 
 templates = {'now': "%H:%M:%S",
-			 'minutes': "%d.%m %H:%M",
-			 'hours': "%d.%m %H",
-			 'days': "%d.%m.%Y %H",
-			 'weeks:': "%d.%m.%Y"}
+			 'minutely': "%d.%m %H:%M",
+			 'hourly': "%d.%m %H",
+			 'daily': "%d.%m.%Y %H",
+			 'weekly:': "%d.%m.%Y",
+			 'monthly': '%m %Y'}
 
 def format_datetime(date_time, template='minutes', format=''):
 	"""
