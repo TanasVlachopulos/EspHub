@@ -96,7 +96,7 @@ class Ability(Base):
 	unit = Column('unit', String(16), nullable=True)
 	default_value = Column('defaultValue', String(16), nullable=True)
 	data_type = Column('dataType', String(16), default='str')
-	description = Column('description', String, nullable=True)
+	description = Column('description', String(512), nullable=True)
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
 	device = relationship(Device, cascade='delete', back_populates='abilities')
