@@ -83,6 +83,8 @@
     <script type="text/javascript" src="{% static 'main/js_libs/knockout-3.4.2.js' %}"></script>
     {# date range picker #}
     <script type="text/javascript" src="{% static 'main/js_libs/daterangepicker.min.js' %}"></script>
+    {# URL manipulation https://github.com/tjenkinson/url-toolkit #}
+    <script type="text/javascript" src="{% static 'main/js_libs/URI.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js_libs/moment.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/jquery.cookie.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/updateDeviceStatus.js' %}"></script>
@@ -96,8 +98,18 @@
 
             $("#date-range-input").daterangepicker({
                 minDate: moment().subtract(2, 'years'),
+                firstDayOfWeek: 1,
+                ranges: {
+                    'Last 7 days': [moment().subtract(6, 'days'), moment()],
+                    'Last 14 days': [moment().subtract(13, 'days'), moment()],
+                    'Last 30 days': [moment().subtract(29, 'days'), moment()],
+                    'Last 90 days': [moment().subtract(89, 'days'), moment()],
+                    'Last Year': [moment().subtract(1, 'year').add(1, 'day'), moment()],
+                    'All Time': 'all-time', // [minDate, maxDate]
+                    'Custom Range': 'custom'
+                },
                 callback: function (startDate, endDate, period) {
-                    $(this).val(startDate.format('L') + ' – ' + endDate.format('L'));
+                    $(this).val(startDate.format('L') + '–' + endDate.format('L'));
                 }
             });
 

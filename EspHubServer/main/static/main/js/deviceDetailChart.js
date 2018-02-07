@@ -4,15 +4,22 @@ function deviceDetailChart(canvasId) {
     }
 
     var url = $('#' + canvasId)[0].attributes['data-url'].nodeValue;
+    url = new URI(url);
+    url.addQuery("summarize", "minutely");
+    url.addQuery("from_date", "04.02.2018");
+    console.log(url.toString());
 
-    $.getJSON(url, function (result) {
+    $.getJSON(url.toString(), function (result) {
         if (!$.isEmptyObject(result)) {
             // _plotChart(result, canvasId);
             _eChart(result, canvasId);
         }
         else {
+            console.log("Error: response is empty.");
             return null;
         }
+    }).fail(function () {
+        console.log("Error: HTTP request failed.");
     })
 }
 
