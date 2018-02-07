@@ -16,14 +16,17 @@ def resample_data_vectors(data, index_name, resampling_period):
 	:param resempling_period: One of resampling option: minutely, hourly, daily, weekly, monthly
 	:return: Dictionary of in same format as data
 	"""
+	# format data into pandas index
 	data_frame = pd.DataFrame(data)
 	data_frame[index_name] = pd.to_datetime(data_frame[index_name])
 	data_frame = data_frame.set_index(index_name)
 
+	# make time-series resample
 	offset = offset_mapper.get(resampling_period, 'minutely')
 	data_frame = data_frame.resample(offset).mean()
+	data_frame = data_frame.where((pd.notnull(data_frame)), None)
 
-	# print(data_frame.index.values)
+	# format data back into python list format
 	result = data_frame.to_dict(orient='list')
 	result[index_name] = [item.to_pydatetime() for item in data_frame.index.tolist()]
 	return result
