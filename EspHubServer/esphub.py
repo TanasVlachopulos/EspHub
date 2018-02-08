@@ -100,6 +100,8 @@ def cli():
 	if not os.path.isfile(key_file_path):
 		server_key = str(uuid.uuid4())
 		log.info("New server ID initiating: '{}'".format(server_key))
+		dir_path, filename = os.path.split(key_file_path)
+		os.makedirs(dir_path, exist_ok=True)
 		with open(key_file_path, 'w') as f:
 			f.write(server_key)
 	else:
