@@ -12,9 +12,7 @@ function deviceDetailChart(canvasId) {
 
     var dateRange = $('#date-range-input-' + canvasId).val();
     if (dateRange !== "") {
-        console.log(dateRange);
         var dateRangeSplit = dateRange.split("–");
-        console.log(dateRangeSplit);
         url.addQuery("from_date", dateRangeSplit[0]);
         url.addQuery("to_date", dateRangeSplit[1]);
     }

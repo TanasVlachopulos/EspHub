@@ -47,7 +47,7 @@
                         <li class="tab col"><a href="#tab-{{ value.name }}">{{ value.value_type|capfirst }}</a></li>
                     {% endfor %}
                 </ul>
-                <a class="btn-floating btn-large halfway-fab waves-light waves-effect orange darken-1"><i class="material-icons">send</i></a>
+                <a class="btn-floating btn-large halfway-fab waves-light waves-effect orange darken-1" onclick="deviceDetailChart(window.tabValue);"><i class="material-icons">send</i></a>
             </div>
 
         </nav>
@@ -128,10 +128,10 @@
                 $('#' + this.id).daterangepicker({
                     minDate: moment().subtract(2, 'years'),
                     ranges: {
+                        'Last 2 days': [moment().subtract(1, 'days'), moment()],
                         'Last 7 days': [moment().subtract(6, 'days'), moment()],
                         'Last 14 days': [moment().subtract(13, 'days'), moment()],
                         'Last 30 days': [moment().subtract(29, 'days'), moment()],
-                        'Last 90 days': [moment().subtract(89, 'days'), moment()],
                         'Last Year': [moment().subtract(1, 'year').add(1, 'day'), moment()],
                         'All Time': 'all-time', // [minDate, maxDate]
                         'Custom Range': 'custom'
@@ -146,12 +146,16 @@
             updateDeviceValues("{% url 'main:device_actual_values_api' device.id %}", {{ device_values_interval }});
 
             // init tab with charts
-            deviceDetailChart($('#first-tab-value')[0].attributes['data-value'].nodeValue); // element first-tab-value is hidden and contain name of first tab
+            var firstValue = $('#first-tab-value')[0].attributes['data-value'].nodeValue;
+            deviceDetailChart(firstValue); // element first-tab-value is hidden and contain name of first tab
+            window.tabValue = firstValue; // set current active tab for floating action button
+
             $('.modal').modal(); // init modal windows
             $('ul.tabs').tabs({
                 'swipeable': false,
                 'onShow': function (param) {
                     var tabValue = param[0]['attributes'][1]['nodeValue'];
+                    window.tabValue = tabValue;
                     deviceDetailChart(tabValue);
                 }
             }); // init tabs
