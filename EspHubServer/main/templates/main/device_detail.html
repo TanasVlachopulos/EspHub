@@ -47,11 +47,12 @@
                         <li class="tab col"><a href="#tab-{{ value.name }}">{{ value.value_type|capfirst }}</a></li>
                     {% endfor %}
                 </ul>
-                <a class="btn-floating btn-large halfway-fab waves-light waves-effect orange darken-1" onclick="deviceDetailChart(window.tabValue);"><i class="material-icons">send</i></a>
+                <a class="btn-floating btn-large halfway-fab waves-light waves-effect orange darken-1"
+                   onclick="deviceDetailChart(window.tabValue); updatePlotSettingsStorage('{{ device.id }}', window.tabValue)">
+                    <i class="material-icons">send</i>
+                </a>
             </div>
-
         </nav>
-
 
         {# div first-tab-value indicate which tab will be loadef first (before clicking on tab), parameter data-value is used as input for script deviceDetailChart #}
         <div id="first-tab-value" data-value="{{ actual_values.0.name }}" hidden></div>
@@ -61,7 +62,7 @@
                 <div class="row" style="margin-top: 0.5em;">
                     <div class="col s4 l4">
                         <div class="input-field">
-                            <input id="date-range-input-{{ value.name }}" class="date-range" type="text" onloadstart="console.log('element load')"/>
+                            <input id="date-range-input-{{ value.name }}" class="date-range datepicker" type="text"/>
                             <label for="date-range-input-{{ value.name }}">Select date range</label>
                         </div>
                     </div>
@@ -117,22 +118,25 @@
     <script type="text/javascript" src="{% static 'main/js/updateDeviceValues.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/outputActionsAjax.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/deviceDetailChart.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/updatePlotSettingsStorage.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/loadPlotSettingsFromStorage.js' %}"></script>
 
     <script type="text/javascript">
         $(document).ready(function () {
-            $('select').material_select();
-
+            loadPlotSettingsFromStorage("{{ device.id }}"); // load previous settings from local storage
+            $('select').material_select(); // initiate selects
 
             // initiate all date pickers
             $(".date-range").each(function (item, element) {
                 $('#' + this.id).daterangepicker({
                     minDate: moment().subtract(2, 'years'),
+                    maxDate: [moment().add(2, 'days'), 'exclusive'],
                     ranges: {
-                        'Last 2 days': [moment().subtract(1, 'days'), moment()],
-                        'Last 7 days': [moment().subtract(6, 'days'), moment()],
-                        'Last 14 days': [moment().subtract(13, 'days'), moment()],
-                        'Last 30 days': [moment().subtract(29, 'days'), moment()],
-                        'Last Year': [moment().subtract(1, 'year').add(1, 'day'), moment()],
+                        'Last 3 days': [moment().subtract(2, 'days'), moment().add(1, 'days')],
+                        'Last 7 days': [moment().subtract(6, 'days'), moment().add(1, 'days')],
+                        'Last 14 days': [moment().subtract(13, 'days'), moment().add(1, 'days')],
+                        'Last 30 days': [moment().subtract(29, 'days'), moment().add(1, 'days')],
+                        'Last Year': [moment().subtract(1, 'year').add(1, 'day'), moment().add(1, 'days')],
                         'All Time': 'all-time', // [minDate, maxDate]
                         'Custom Range': 'custom'
                     },
