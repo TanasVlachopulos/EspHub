@@ -67,7 +67,7 @@ def get_records_for_charts(device_id, value_type, from_date, to_date, summarizat
 			'values': [float(record.value) for record in records],
 		}
 
-		if summarization:
+		if summarization and summarization.lower() != "now":
 			response = TimeSeriesOps.resample_data_vectors(response, 'labels', summarization)
 
 		time_template = summarization if summarization else 'now'

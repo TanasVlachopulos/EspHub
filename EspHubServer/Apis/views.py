@@ -65,7 +65,6 @@ def get_values(request, device_id, ability):
 			to_date = datetime.now()
 
 		if request.GET.get("from_date"):
-			print('selecting from date')
 			from_date = datetime.strptime(request.GET.get('from_date'), DATE_FORMAT)
 		else:
 			from_date = to_date - timedelta(1)  # 1 day history

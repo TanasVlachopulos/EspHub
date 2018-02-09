@@ -3,16 +3,26 @@ function deviceDetailChart(canvasId) {
         window.myLine.destroy();
     }
 
-    var url = $('#' + canvasId)[0].attributes['data-url'].nodeValue;
+    var summarization = $('#summarize-select-' + canvasId).val();
+    var chart_type = $('#chart-type-select-' + canvasId).val();
+
+    var url = $('#canvas-tab-' + canvasId)[0].attributes['data-url'].nodeValue;
     url = new URI(url);
-    url.addQuery("summarize", "minutely");
-    url.addQuery("from_date", "04.02.2018");
-    console.log(url.toString());
+    url.addQuery("summarize", summarization);
+
+    var dateRange = $('#date-range-input-' + canvasId).val();
+    if (dateRange !== "") {
+        console.log(dateRange);
+        var dateRangeSplit = dateRange.split("–");
+        console.log(dateRangeSplit);
+        url.addQuery("from_date", dateRangeSplit[0]);
+        url.addQuery("to_date", dateRangeSplit[1]);
+    }
 
     $.getJSON(url.toString(), function (result) {
         if (!$.isEmptyObject(result)) {
             // _plotChart(result, canvasId);
-            _eChart(result, canvasId);
+            _eChart(result, 'canvas-tab-' + canvasId);
         }
         else {
             console.log("Error: response is empty.");
@@ -122,7 +132,8 @@ function _eChart(result, canvasId) {
                 sampling: 'average',
                 itemStyle: {
                     normal: {
-                        color: 'rgb(16, 70, 131)'
+                        // color: 'rgb(226,72,20)'
+                        color: '#1e88e5'
                     }
                 },
 

@@ -38,30 +38,55 @@
 
     {# tabs with charts #}
     <div class="row">
-        {% include 'main/device_detail_tabs.html' with actual_values=actual_values %}
+        {#        {% include 'main/device_detail_tabs.html' with actual_values=actual_values %}#}
+        <nav class="nav-extended">
+            <div class="nav-content">
+
+                <ul id="tabs-swipe-demo" class="tabs custom-tabs z-depth-1 blue-grey darken-1 ">
+                    {% for value in actual_values %}
+                        <li class="tab col"><a href="#tab-{{ value.name }}">{{ value.value_type|capfirst }}</a></li>
+                    {% endfor %}
+                </ul>
+                <a class="btn-floating btn-large halfway-fab waves-light waves-effect orange darken-1"><i class="material-icons">send</i></a>
+            </div>
+
+        </nav>
+
 
         {# div first-tab-value indicate which tab will be loadef first (before clicking on tab), parameter data-value is used as input for script deviceDetailChart #}
-        <div id="first-tab-value" data-value="canvas-tab-{{ actual_values.0.name }}" hidden></div>
+        <div id="first-tab-value" data-value="{{ actual_values.0.name }}" hidden></div>
         {% for value in actual_values %}
-            <div id="tab-{{ value.name }}" class="col s12 grey lighten-4">
+            <div id="tab-{{ value.name }}" data-name="{{ value.name }}" class="col s12 grey lighten-4">
 
-                {#                <div class="row">#}
-                {#                    <div class="row s6">#}
-                <div class="input-field">
-                    <input id="date-range-input" type="text" data-bind="daterangepicker: datepickerbtn"/>
-                    <label for="date-range-input">Select date range</label>
+                <div class="row" style="margin-top: 0.5em;">
+                    <div class="col s4 l4">
+                        <div class="input-field">
+                            <input id="date-range-input-{{ value.name }}" class="date-range" type="text" onloadstart="console.log('element load')"/>
+                            <label for="date-range-input-{{ value.name }}">Select date range</label>
+                        </div>
+                    </div>
+                    <div class="col s4 l3">
+                        <div class="input-field">
+                            <select id="summarize-select-{{ value.name }}">
+                                <option value="now">Now</option>
+                                <option value="minutely" selected>Minutes</option>
+                                <option value="hourly">Hours</option>
+                                <option value="daily">Days</option>
+                                <option value="weekly">Weeks</option>
+                            </select>
+                            <label for="summarize-select-{{ value.name }}">Data sampling</label>
+                        </div>
+                    </div>
+                    <div class="col s4 l3">
+                        <div class="input-field">
+                            <select id="chart-type-select-{{ value.name }}">
+                                <option value="line" selected>Line</option>
+                                <option value="bar">Bar</option>
+                            </select>
+                            <label for="chart-type-select-{{ value.name }}">Chart type</label>
+                        </div>
+                    </div>
                 </div>
-                <div class="input-field">
-                    <select id="summarize-select">
-                        <option value="" disabled selected>Choose your option</option>
-                        <option value="1">Now</option>
-                        <option value="2">Minutes</option>
-                        <option value="3">Hours</option>
-                    </select>
-                    <label for="summarize-select">Materialize Select</label>
-                </div>
-                {#                    </div>#}
-                {#                </div>#}
 
                 <div style="width: 100%;">
                     {#                    <canvas id="canvas-tab-{{ value.name }}" data-url="{% url 'main:records_api' device.id value.name %}"#}
@@ -74,6 +99,7 @@
     </div>
 
     {% load static %} {# load javascript #}
+    {# https://sensortower.github.io/daterangepicker/ #}
     <link type="text/css" rel="stylesheet" href="{% static 'main/css/daterangepicker.min.css' %}">
     {#    import ChartJS plot library#}
     <script type="text/javascript" src="{% static 'main/js_libs/Chart.bundle.js' %}"></script>
@@ -96,21 +122,24 @@
         $(document).ready(function () {
             $('select').material_select();
 
-            $("#date-range-input").daterangepicker({
-                minDate: moment().subtract(2, 'years'),
-                firstDayOfWeek: 1,
-                ranges: {
-                    'Last 7 days': [moment().subtract(6, 'days'), moment()],
-                    'Last 14 days': [moment().subtract(13, 'days'), moment()],
-                    'Last 30 days': [moment().subtract(29, 'days'), moment()],
-                    'Last 90 days': [moment().subtract(89, 'days'), moment()],
-                    'Last Year': [moment().subtract(1, 'year').add(1, 'day'), moment()],
-                    'All Time': 'all-time', // [minDate, maxDate]
-                    'Custom Range': 'custom'
-                },
-                callback: function (startDate, endDate, period) {
-                    $(this).val(startDate.format('L') + '–' + endDate.format('L'));
-                }
+
+            // initiate all date pickers
+            $(".date-range").each(function (item, element) {
+                $('#' + this.id).daterangepicker({
+                    minDate: moment().subtract(2, 'years'),
+                    ranges: {
+                        'Last 7 days': [moment().subtract(6, 'days'), moment()],
+                        'Last 14 days': [moment().subtract(13, 'days'), moment()],
+                        'Last 30 days': [moment().subtract(29, 'days'), moment()],
+                        'Last 90 days': [moment().subtract(89, 'days'), moment()],
+                        'Last Year': [moment().subtract(1, 'year').add(1, 'day'), moment()],
+                        'All Time': 'all-time', // [minDate, maxDate]
+                        'Custom Range': 'custom'
+                    },
+                    callback: function (startDate, endDate, period) {
+                        $(this).val(startDate.format('DD.MM.YYYY') + '–' + endDate.format('DD.MM.YYYY'));
+                    }
+                });
             });
 
             updateDeviceStatus("{% url 'main:telemetry_api' device.id %}", {{ device_status_interval }});
@@ -122,7 +151,8 @@
             $('ul.tabs').tabs({
                 'swipeable': false,
                 'onShow': function (param) {
-                    deviceDetailChart('canvas-' + param[0].id);
+                    var tabValue = param[0]['attributes'][1]['nodeValue'];
+                    deviceDetailChart(tabValue);
                 }
             }); // init tabs
         });
