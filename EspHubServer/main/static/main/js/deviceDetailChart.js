@@ -1,10 +1,73 @@
+plotStyles = {
+    line: {
+        type: 'line',
+        areaStyle: null,
+        itemStyle: {
+            normal: {
+                color: '#fb8c00'
+            }
+        }
+    },
+    bar: {
+        type: 'bar',
+        areaStyle: null,
+        primaryColor: '#fb8c00',
+                itemStyle: {
+            normal: {
+                color: new echarts.graphic.LinearGradient(
+                    0, 0, 0, 1,
+                    [
+                        {offset: 0, color: '#ffd54f'},
+                        {offset: 0.5, color: '#ffb74d'},
+                        {offset: 1, color: '#fb8c00'}
+                    ]
+                )
+            },
+            emphasis: {
+                color: new echarts.graphic.LinearGradient(
+                    0, 0, 0, 1,
+                    [
+                        {offset: 0, color: '#fb8c00'},
+                        {offset: 0.7, color: '#ffb74d'},
+                        {offset: 1, color: '#ffd54f'}
+                    ]
+                )
+            }
+        }
+    },
+    fill: {
+        type: 'line',
+        itemStyle: {
+            normal: {
+                color: '#fb8c00'
+            }
+        },
+        areaStyle: {
+            normal: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                    offset: 0,
+                    color: '#fb8c00'
+                }, {
+                    offset: 1,
+                    color: '#f06292'
+                }])
+            }
+        },
+        primaryColor: '#fb8c00'
+    }
+};
+
+/***
+ *
+ * @param canvasId
+ */
 function deviceDetailChart(canvasId) {
     if (window.myLine != undefined) {
         window.myLine.destroy();
     }
 
     var summarization = $('#summarize-select-' + canvasId).val();
-    var chart_type = $('#chart-type-select-' + canvasId).val();
+    var plotType = $('#chart-type-select-' + canvasId).val();
 
     var url = $('#canvas-tab-' + canvasId)[0].attributes['data-url'].nodeValue;
     url = new URI(url);
@@ -20,7 +83,7 @@ function deviceDetailChart(canvasId) {
     $.getJSON(url.toString(), function (result) {
         if (!$.isEmptyObject(result)) {
             // _plotChart(result, canvasId);
-            _eChart(result, 'canvas-tab-' + canvasId);
+            _eChart(result, 'canvas-tab-' + canvasId, plotStyles[plotType]);
         }
         else {
             console.log("Error: response is empty.");
@@ -72,7 +135,7 @@ function _plotChart(result, canvasId) {
     }
 }
 
-function _eChart(result, canvasId) {
+function _eChart(result, canvasId, args) {
 
     var myChart = echarts.init(document.getElementById(canvasId));
 
@@ -123,17 +186,13 @@ function _eChart(result, canvasId) {
         }],
         series: [
             {
-                name: 'data content',
-                type: 'line',
+                name: 'value',
+                type: args.type || 'line',
                 smooth: true,
                 symbol: 'none',
                 sampling: 'average',
-                itemStyle: {
-                    normal: {
-                        // color: 'rgb(226,72,20)'
-                        color: '#1e88e5'
-                    }
-                },
+                itemStyle: args.itemStyle || null,
+                areaStyle: args.areaStyle || null,
 
                 data: data
             }
