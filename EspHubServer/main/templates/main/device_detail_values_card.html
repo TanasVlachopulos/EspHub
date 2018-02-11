@@ -11,7 +11,7 @@
             </tr>
             {% for value in actual_values %}
                 <tr>
-                    <td>{{ value.value_type|capfirst }}</td>
+                    <td><span class="tooltipped" data-tooltip="{{ value.desc }}">{{ value.value_type|capfirst }}</span></td>
                     <td>
                         <span id="date-{{ value.name }}">{{ value.time|date:"j. E" }}</span>&nbsp;
                         <span id="time-{{ value.name }}">{{ value.time|time:"H:i:s" }}</span>

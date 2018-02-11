@@ -156,6 +156,7 @@
             window.tabValue = firstValue; // set current active tab for floating action button
 
             $('.modal').modal(); // init modal windows
+            $('.tooltipped').tooltip({delay: 50, position: 'top'}); // init tooltips
             $('ul.tabs').tabs({
                 'swipeable': false,
                 'onShow': function (param) {
