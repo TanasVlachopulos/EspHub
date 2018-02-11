@@ -6,9 +6,11 @@ from Plots import DisplayPlot
 from Tools.Log import Log
 from Tools import DateConvert
 from DataProcessing import TimeSeriesOps
+from datetime import datetime, timedelta
 
 conf = Config.get_config()
 log = Log.get_logger()
+
 
 def get_actual_device_values(device_id, io_type='all'):
 	"""
@@ -52,7 +54,9 @@ def get_records_for_charts(device_id, value_type, from_date, to_date, summarizat
 	:param device_id: device ID
 	:param value_type: name of ability
 	:param from_date: start of time interval
+	:type from_date: datetime.datetime
 	:param to_date: end of time interval
+	:type to_date: datetime.datetime
 	:return: JSON object of time labels and values
 	"""
 	# TODO implement time interval from date - to date
@@ -98,29 +102,47 @@ def get_all_input_abilities():
 
 
 def render_plot_64base_preview(device_id, ability):
-	plot_data = get_records_for_charts(device_id, ability, 0, 0)
+	now = datetime.now()
+	plot_data = get_records_for_charts(device_id, ability, now - timedelta(1), now)
 	plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
 
 	return plot.render_to_base64(width=320, height=240)
 
 
 def get_screen_list(device_id, ability_name):
-	db = DBA.Dba(conf.get('db', 'path'))
-	screens = db.get_display(device_id, ability_name)
+	with DAC.keep_session() as db:
+		screens = DBA.get_display(db, device_id, ability_name)
 
-	for screen in screens:
-		screen.params = json.loads(screen.params)  # parse screen setting like source device and ability
-		source_device = db.get_device(
-			screen.params.get('source_device'))  # load device to determine user names of device and ability
+		response_lst = []
 
-		screen.params['source_device_name'] = source_device.name
+		for screen in screens:
+			print(screen)
+			# source_device = db.get_device(screen.params.get('source_device'))  # load device to determine user names of device and ability
+			# source_device = DBA.get_device(db, screen.params.get('source_device'))
+			src_dev = screen.params.get('source_device')
+			ability = screen.params.get('source_ability')
 
-		# extract ability user name from provided_function JSON
-		source_device_abilities = json.loads(source_device.provided_func)
-		for ability in source_device_abilities:
-			if ability.get('name') == screen.params.get('source_ability'):
-				screen.params['source_ability_name'] = ability.get('user_name')
+			print(src_dev, ability)
+			plot = render_plot_64base_preview(screen.params.get('source_device'), screen.params.get('source_ability'))
+			# print(plot)
 
-		screen.params['base64_plot'] = render_plot_64base_preview(screen.params.get('source_device'),
-																  screen.params.get('source_ability'))
-	return screens
+			response_lst.append({
+				'params': {
+					'source_device_name': src_dev,
+					'source_ability_name': ability,
+					'base64_plot': plot
+				}
+			})
+
+			#
+			# screen.params['source_device_name'] = source_device.name
+			#
+			# # extract ability user name from provided_function JSON
+			# source_device_abilities = source_device.abilities
+			# for ability in source_device_abilities:
+			# 	if ability.get('name') == screen.params.get('source_ability'):
+			# 		screen.params['source_ability_name'] = ability.get('user_name')
+			#
+
+			print(response_lst)
+			return response_lst

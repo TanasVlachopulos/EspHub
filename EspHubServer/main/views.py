@@ -104,9 +104,11 @@ def display(request, ability_name, device_id):
 	# print(plot_data)
 	# plot = DisplayPlot.DisplayPlot(plot_data['values'], x_label_rotation=90)
 
+	# print(data_parsing.get_all_input_abilities())
+
 	response = {
-		'screens': get_screen_list(device_id, ability_name),  # list of screen settings
-		'devices': get_all_input_abilities(),  # list of all devices and their input abilities
+		'screens': data_parsing.get_screen_list(device_id, ability_name),  # list of screen settings
+		'devices': data_parsing.get_all_input_abilities(),  # list of all devices and their input abilities
 		'options': ['plot', 'text'],
 		'ability_name': ability_name,
 		'device_id': device_id,
