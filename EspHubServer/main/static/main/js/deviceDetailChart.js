@@ -12,7 +12,7 @@ plotStyles = {
         type: 'bar',
         areaStyle: null,
         primaryColor: '#fb8c00',
-                itemStyle: {
+        itemStyle: {
             normal: {
                 color: new echarts.graphic.LinearGradient(
                     0, 0, 0, 1,
@@ -80,10 +80,13 @@ function deviceDetailChart(canvasId) {
         url.addQuery("to_date", dateRangeSplit[1]);
     }
 
+    args = plotStyles[plotType];
+    args['unit'] = $('#unit-' + canvasId).text();
+
     $.getJSON(url.toString(), function (result) {
         if (!$.isEmptyObject(result)) {
             // _plotChart(result, canvasId);
-            _eChart(result, 'canvas-tab-' + canvasId, plotStyles[plotType]);
+            _eChart(result, 'canvas-tab-' + canvasId, args);
         }
         else {
             console.log("Error: response is empty.");
@@ -92,47 +95,6 @@ function deviceDetailChart(canvasId) {
     }).fail(function () {
         console.log("Error: HTTP request failed.");
     })
-}
-
-function _plotChart(result, canvasId) {
-    var formatedLabels = [];
-    result['labels'].forEach(function (item, index) {
-        formatedLabels.push(moment(item).format('HH:mm'));
-    });
-
-    if (result) {
-        var config = {
-            type: result['chart_type'],
-            data: {
-                labels: formatedLabels,
-                datasets: [{
-                    label: result['data_label'],
-                    lineTension: 0.2, // line curving
-                    pointRadius: 0.5,
-                    pointBorderWidth: 0.5,
-                    backgroundColor: '#fff',
-                    borderColor: result['border_color'],
-                    data: result['values'],
-                    fill: false,
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    xAxes: [{
-                        ticks: {
-                            autoSkip: true,
-                            autoSkipPadding: 20,
-                        }
-                    }]
-                }
-            }
-        };
-
-        var ctx = $('#' + canvasId);
-        window.myLine = new Chart(ctx, config);
-        window.typeOfActiveChart = result['data_type'];
-    }
 }
 
 function _eChart(result, canvasId, args) {
@@ -151,20 +113,31 @@ function _eChart(result, canvasId, args) {
         },
 
         toolbox: {
+            left: 'center',
             feature: {
                 dataZoom: {
+                    title: {
+                        zoom: 'Zoom area',
+                        back: 'Zoom out area'
+                    },
                     yAxisIndex: 'none'
                 },
-                restore: {},
-                saveAsImage: {}
+                restore: {
+                    title: 'Restore'
+                },
+                saveAsImage: {
+                    title: 'Save as png'
+                }
             }
         },
         xAxis: {
             type: 'category',
+            name: 'time',
             boundaryGap: false,
             data: date
         },
         yAxis: {
+            name: args.unit || "",
             type: 'value',
             boundaryGap: [0, '100%']
         },
@@ -186,7 +159,7 @@ function _eChart(result, canvasId, args) {
         }],
         series: [
             {
-                name: 'value',
+                name: 'value [' + (args.unit || "") + ']',
                 type: args.type || 'line',
                 smooth: true,
                 symbol: 'none',
