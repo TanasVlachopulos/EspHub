@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func, Text, BLOB
 from sqlalchemy.orm import relationship
 from DataAccess.DAC import Base
 from DataAccess.CustomTypes import CustomJson
@@ -26,11 +26,13 @@ class Device(Base):
 	VALIDATED = 'validated'
 	WAITING = 'waiting'
 
+	# columns
 	id = Column('id', String(64), primary_key=True, unique=True)
 	name = Column('name', String(64), nullable=False)
 	status = Column('status', String(16), default='validated')
 	provided_func = Column('provided_func', CustomJson, nullable=False, default=list())
 
+	# forward dependencies
 	abilities = relationship('Ability', back_populates='device')
 	records = relationship('Record', back_populates='device')
 	telemetries = relationship('Telemetry', back_populates='device')
@@ -88,6 +90,7 @@ class Ability(Base):
 	TYPE_STR = 'str'
 	TYPE_JSON = 'json'
 
+	# columns
 	id = Column('id', Integer, primary_key=True)
 	name = Column('name', String(256), nullable=False)
 	user_name = Column('userName', String(256), nullable=True)
@@ -98,8 +101,12 @@ class Ability(Base):
 	data_type = Column('dataType', String(16), default='str')
 	description = Column('description', String(512), nullable=True)
 
+	# downward dependencies
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
 	device = relationship(Device, cascade='delete', back_populates='abilities')
+
+	# forward dependencies
+	displays_ng = relationship('DisplayNg', back_populates='ability')
 
 	def __repr__(self):
 		return 'Ability: <{}>'.format((self.id, self.name, self.user_name, self.io, self.category, self.device_id))
@@ -276,3 +283,92 @@ class Display(Base):
 
 	def __repr__(self):
 		return "Display <{}>".format((self.id, self.display_name, self.screen_name))
+
+
+class DisplayNg(Base):
+	"""
+	New generation of table Display which represent connected display device.
+	This table is compatible with new model: ABILITY -> DISPLAYS -> SCREENS
+	:param id: Unique display ID - automatically generated.
+	:type id: int
+	:param name: Name of connected display (for user purpose).
+	:type name: String
+	:param width: Width of display in pixels.
+	:type width: int
+	:param height: Height of display in pixels.
+	:type height: int
+	:param model: Model of connected devices e.g.: SSD1306, ILI9341, ... (mapped in constants).
+	:type model: String
+	:param params: Additional parameters in JSON.
+	:type params: json
+	:param ability: Output ability corresponding with this display.
+	:type ability: Ability
+	:param screens: List of Screens belonging to this display
+	:type screens: list
+	"""
+	MODEL_SSD1306 = 'SSD1306'
+	MODEL_ILI9341 = 'ILI9341'
+
+	__tablename__ = 'displayNg'
+
+	# columns
+	id = Column('id', Integer, primary_key=True)
+	name = Column('name', String(64), nullable=False)
+	width = Column('width', Integer, nullable=False)
+	height = Column('height', Integer, nullable=False)
+	model = Column('model', String(32), nullable=False)
+	params = Column('params', CustomJson, nullable=True)
+
+	# downward dependencies
+	ability_id = Column('ability_id', Integer, ForeignKey('ability.id'))
+	ability = relationship(Ability, cascade='delete', back_populates='displays_ng')
+
+	# forward dependencies
+	screens = relationship('Screen', back_populates='display_ng')
+
+	def __repr__(self):
+		return "DisplayNg <{}>".format((self.id, self.name, self.height, self.width, self.model))
+
+
+class Screen(Base):
+	"""
+	Represent single display screen (each display could have N screens).
+	Screen content is represent by 'content' column or by 'params' column depend on content_type.
+	Content type 'html' store in 'content' column HTML/JS/CSS code which are processed and rendered on display.
+	:param id: Unique screen ID - automatically generated.
+	:type id: int
+	:param name: Name of screen for user purposes.
+	:type name: String
+	:param description: Description of screen content for user purposes.
+	:type description: String
+	:param order: Order number of screen. Default is 0. Same value can be used multiple times, but then order cannot be granted.
+	:type order: int
+	:param rotation_period: Number of second to rewind on the next screen.
+	:type rotation_period: int
+	:param params: Additional arguments in JSON format.
+	:type params: json
+	:param content_type: Define type of screen content. By default content is HTML/CSS/JS stored in column 'content'.
+	:type content_type: String
+	:param content: Raw content in various format, primary HTML/CSS/JS.
+	:type content: BLOB
+	:param display_ng: Parent display
+	:type display_ng: DisplayNg
+	"""
+	CONTENT_TYPE_HTML = 'html'
+
+	__tablename__ = 'screen'
+
+	id = Column('id', Integer, primary_key=True)
+	name = Column('name', String(64), nullable=False)
+	description = Column('description', String(512), nullable=True)
+	order = Column('order', Integer, default=0)
+	rotation_period = Column('rotationPeriod', Integer, default=0)
+	params = Column('params', CustomJson, nullable=True)
+	content_type = Column('contentType', String(32), default=CONTENT_TYPE_HTML)
+	content = Column('content', BLOB, nullable=True)
+
+	display_ng_id = Column('display_ng_id', Integer, ForeignKey('displayNg.id'))
+	display_ng = relationship(DisplayNg, cascade='delete', back_populates='screens')
+
+	def __repr__(self):
+		return "Screen <{}>".format((self.id, self.name, self.order, self.rotation_period, self.content_type))
