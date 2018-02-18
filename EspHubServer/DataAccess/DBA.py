@@ -221,6 +221,7 @@ def get_telemetry(session, device_id):
 
 def insert_display(session, display):
 	"""
+	DEPRECATED
 	Insert display into DB or update it if already exists. You should always check if display with same pair 'display_name' and 'screen_name'
 	does not already exists, if it exists you should update old record not create new once.
 	:param session: Database session.
@@ -233,6 +234,7 @@ def insert_display(session, display):
 
 def update_display(session, display):
 	"""
+	DEPRECATED
 	Update existing display.
 	:param session: Database session.
 	:param display: DAO Display object.
@@ -243,6 +245,7 @@ def update_display(session, display):
 
 def get_display(session, device_id, display_name):
 	"""
+	DEPRECATED
 	Get all displays with given name and for given device. Table Display can contain more rows with same display name,
 	each display can have more screens.
 	:param session: Database session.
@@ -257,6 +260,7 @@ def get_display(session, device_id, display_name):
 
 def get_screen(session, id):
 	"""
+	DEPRECATED
 	Get single screen by ID.
 	:param session: Database session.
 	:param id: Screen ID (primary key from table Display, not optional parameter screen_name)
@@ -264,3 +268,14 @@ def get_screen(session, id):
 	:return: DAO Display object.
 	"""
 	return session.query(Display).get(id)
+
+def get_screen_by_id(session, screen_id):
+	"""
+	Obtain screen by id from table Screen belong to table DisplayNg.
+	:param session: Database session.
+	:param device_id: ID of display parent Device.
+	:param display_id: ID of DisplayNg table, parent of requested screen.
+	:param screen_id: ID of requested Screen.
+	:return: DAO Screen object.
+	"""
+	return session.query(Screen).get(screen_id)
