@@ -24,6 +24,13 @@ class WebWidgetServer(BaseHTTPRequestHandler):
 		screen_id = args_lst[1]
 		content = None
 
+		# handle remote request for quit server
+		if screen_id == 'quit':
+			self.send_response(200)
+			self.send_header('Content-type', 'text/html')
+			self.end_headers()
+			return
+
 		# obtain screen from DB
 		try:
 			int_screen_id = int(screen_id)
