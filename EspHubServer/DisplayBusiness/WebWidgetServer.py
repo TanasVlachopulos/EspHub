@@ -54,6 +54,7 @@ class WebWidgetServer(BaseHTTPRequestHandler):
 			return
 
 		# render content as HTTP response
+		log.debug("Responding to request.")
 		self.send_response(200)
 		self.send_header('Content-type', 'text/html')
 		self.end_headers()
