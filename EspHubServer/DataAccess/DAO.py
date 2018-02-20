@@ -106,7 +106,7 @@ class Ability(Base):
 	device = relationship(Device, cascade='delete', back_populates='abilities')
 
 	# forward dependencies
-	displays_ng = relationship('DisplayNg', back_populates='ability')
+	display_ng = relationship('DisplayNg', uselist=False, back_populates='ability')
 
 	def __repr__(self):
 		return 'Ability: <{}>'.format((self.id, self.name, self.user_name, self.io, self.category, self.device_id))
@@ -321,7 +321,7 @@ class DisplayNg(Base):
 
 	# downward dependencies
 	ability_id = Column('ability_id', Integer, ForeignKey('ability.id'))
-	ability = relationship(Ability, cascade='delete', back_populates='displays_ng')
+	ability = relationship(Ability, cascade='delete', back_populates='display_ng')
 
 	# forward dependencies
 	screens = relationship('Screen', back_populates='display_ng')
