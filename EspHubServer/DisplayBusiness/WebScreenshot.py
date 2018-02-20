@@ -1,5 +1,3 @@
-import time
-
 from DisplayBusiness.WebWidgetServer import WebWidgetServer
 from Tools.Log import Log
 from threading import Thread, Event
@@ -7,6 +5,8 @@ from selenium import webdriver
 import urllib.request
 import socketserver
 import random
+import time
+import os
 
 log = Log.get_logger()
 
@@ -29,27 +29,43 @@ class WebScreenshot(object):
 		self.end_event = Event()
 		self.web_thread = Thread(target=WebScreenshot.render_web_widget, args=(self.end_event, self.port, local_address))
 		self.web_thread.start()
+		time.sleep(3)
 
 		log.debug("Initiating Screenshot web browser.")
 		self.options = webdriver.ChromeOptions()
 		self.options.add_argument('headless')
 		self.options.add_argument('window-size={}x{}'.format(width, height))
 
-	def take_screenshot(self, screen_id):
+	def take_screenshot(self, screen_id, filename):
 		"""
-
-		:param screen_id:
+		Take screenshot of given screen and save result to file.
+		:param screen_id: ID of screen record.
+		:param filename: Filename of result screenshot. Screenshot are saved to folder Images.
 		:return:
 		"""
-		log.debug("Taking screenshot of screen '{}' size {}x{}".format(screen_id, self.width, self.height))
+		log.debug("Taking screenshot of screen '{}' size {}x{} as file '{}'".format(screen_id, self.width, self.height, filename))
 		driver = webdriver.Chrome(chrome_options=self.options)
 		driver.get('http://{}:{}/{}'.format(self.local_address, self.port, screen_id))
-		driver.save_screenshot('screen.png')
+		driver.save_screenshot(os.path.join('Images', filename))
 		time.sleep(1)
 		driver.close()
 		# This session have to be closed here, because connection to one thread server block the server for other operation such as shutdown server.
 		# But closing driver cause exception ConnectionResetError: [WinError 10054], I dont know how to handle this exception a and what cause it.
 		# TODO handle each requests in separete thread
+
+	def take_screenshot_base64(self, screen_id):
+		"""
+		Take screenshot of given screen and return as Base64 string.
+		:param screen_id: ID of screen record.
+		:return: Base64 encoded image.
+		"""
+		log.debug("Taking screenshot of screen '{}' size {}x{} as base64.".format(screen_id, self.width, self.height))
+		driver = webdriver.Chrome(chrome_options=self.options)
+		driver.get('http://{}:{}/{}'.format(self.local_address, self.port, screen_id))
+		screen = driver.get_screenshot_as_base64()
+		time.sleep(1)
+		driver.close()
+		return screen
 
 	def quit(self):
 		"""
