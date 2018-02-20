@@ -8,6 +8,7 @@ from Tools.Log import Log
 from DataAccess import DAC, DBA
 from datetime import datetime, timedelta
 from main import data_parsing
+from DisplayBusiness.WebScreenshot import WebScreenshot
 import json
 
 conf = Config.get_config()
@@ -78,3 +79,17 @@ def get_values(request, device_id, ability):
 	summarize = request.GET.get('summarize')
 	response = data_parsing.get_records_for_charts(device_id, ability, from_date, to_date, summarization=summarize)
 	return HttpResponse(json.dumps(response))
+
+def get_screenshot(request, screen_id):
+	"""
+
+	:param request:
+	:param screen_id:
+	:return:
+	"""
+	ws = WebScreenshot(500, 500)
+	screen = ws.take_screenshot_base64(screen_id)
+	ws.quit()
+
+	return HttpResponse(screen)
+
