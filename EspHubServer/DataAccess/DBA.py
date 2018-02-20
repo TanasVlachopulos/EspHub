@@ -58,6 +58,7 @@ def get_device(session, device_id):
 	"""
 	return session.query(Device).get(device_id)
 
+
 def get_devices_by_name(session, device_name):
 	"""
 	Get all devices with specific name. Searching ignore letter cases!
@@ -66,6 +67,7 @@ def get_devices_by_name(session, device_name):
 	:return: List of DAO Device objects.
 	"""
 	return session.query(Device).filter(func.lower(Device.name) == func.lower(device_name)).all()
+
 
 def insert_device(session, device):
 	"""
@@ -148,6 +150,7 @@ def get_record_from_device(session, device_id, value_type=None, order='desc', li
 	else:
 		return session.query(Record).filter(Record.device_id == device_id).order_by(order_field).limit(limit).all()
 
+
 def get_record_from_device_between(session, device_id, from_date, to_date, value_type=None, order='desc'):
 	"""
 	Get Records for given device_id.
@@ -168,6 +171,7 @@ def get_record_from_device_between(session, device_id, from_date, to_date, value
 		return session.query(Record).filter(and_(Record.device_id == device_id, Record.name == value_type, Record.time.between(from_date, to_date))).order_by(order_field).all()
 	else:
 		return session.query(Record).filter(and_(Record.device_id == device_id, Record.device_id.between(from_date, to_date))).order_by(order_field).all()
+
 
 def insert_record(session, record):
 	"""
@@ -268,6 +272,18 @@ def get_screen(session, id):
 	:return: DAO Display object.
 	"""
 	return session.query(Display).get(id)
+
+
+def get_display_ng(session, ability_id):
+	"""
+	Get display from given ability. If ability does not have any display return None.
+	:param session: Database session.
+	:param ability_id: ID of ability.
+	:return: DAO Display_ng object.
+	"""
+	ability = session.query(Ability).join(Ability.display_ng).filter(Ability.id == ability_id).first()
+	return ability.display_ng
+
 
 def get_screen_by_id(session, screen_id):
 	"""
