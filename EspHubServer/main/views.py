@@ -117,6 +117,17 @@ def display(request, ability_name, device_id):
 
 	return render(request, 'main/display.html', response)
 
+def display_ng(request, ability_id):
+	with DAC.keep_session() as db:
+		display = DBA.get_display_ng(db, ability_id)
+		print(display)
+
+		response = {
+			'display': display,
+		}
+
+		return render(request, 'main/display_ng.html', response)
+
 
 def settings(request):
 	"""
