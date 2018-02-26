@@ -117,13 +117,14 @@ def display(request, ability_name, device_id):
 
 	return render(request, 'main/display.html', response)
 
-def display_ng(request, ability_id):
+def display_ng(request, ability_id, screen_id):
 	with DAC.keep_session() as db:
 		display = DBA.get_display_ng(db, ability_id)
 		print(display)
 
 		response = {
 			'display': display,
+			'active_screen': DBA.get_screen_by_id(db, screen_id),
 		}
 
 		return render(request, 'main/display_ng.html', response)

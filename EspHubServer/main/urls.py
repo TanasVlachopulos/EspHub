@@ -8,7 +8,7 @@ urlpatterns = [
 	url(r'^device/(?P<device_id>[-\w]+)', views.device_detail, name='device_detail'),  # device detail
 	url(r'^waiting-devices', views.waiting_devices, name='waiting_devices'),  # devices waiting for verification
 	url(r'^display/(?P<device_id>[-\w]+)/(?P<ability_name>\w+)/', views.display, name='display'),
-	url(r'^display-ng/(?P<ability_id>\d+)/$', views.display_ng, name='display_ng'),
+	url(r'^display-ng/(?P<ability_id>\d+)/(?P<screen_id>\d+)$', views.display_ng, name='display_ng'),
 	url(r'^settings$', views.settings, name='settings'),
 	# Forms
 	url(r'^verify-device/(?P<device_id>[-\w]+)', views.verify_device, name='verify_device'),  # device verification form
