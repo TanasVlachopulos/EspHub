@@ -55,6 +55,31 @@
                 Preview
             </a>
             <a class="btn waves-effect waves-light green darken-1 disabled">Save</a>
+
+
+            <div class="row" >
+                <div id="loader" class="col s12 m12 l12" style="margin: 4em;" hidden>
+                    <div class="preloader-wrapper big active">
+                        <div class="spinner-layer spinner-blue-only">
+                            <div class="circle-clipper left">
+                                <div class="circle"></div>
+                            </div>
+                            <div class="gap-patch">
+                                <div class="circle"></div>
+                            </div>
+                            <div class="circle-clipper right">
+                                <div class="circle"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="canvas-container" class="col s12 m12 l12" style="margin-top: 1em; margin-bottom: 1em;" hidden>
+                    <canvas width="500px" height="500px" id="screen-preview" style="border: 2px solid #E0E0E0; border-radius: 3px"></canvas>
+                </div>
+            </div>
+
+
         </div>
 
         {# screen selector #}
@@ -72,10 +97,8 @@
 
     </div>
 
-    <canvas width="500px" height="500px" id="screen-preview" style="border: 2px solid #E0E0E0; border-radius: 3px"></canvas>
 
     {% load static %}
-    <object data="{% static 'main/images/spinner.svg' %}" type="image/svg+xml"></object>
     <script type="text/javascript" src="{% static 'main/js/loadScreenPreview.js' %}"></script>
 
     <script>
