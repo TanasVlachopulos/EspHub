@@ -1,6 +1,6 @@
 import json
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
 from django.urls import reverse
 from django.forms import formset_factory
 # from .models import Device
@@ -117,17 +117,43 @@ def display(request, ability_name, device_id):
 
 	return render(request, 'main/display.html', response)
 
+
 def display_ng(request, ability_id, screen_id):
-	with DAC.keep_session() as db:
-		display = DBA.get_display_ng(db, ability_id)
-		print(display)
+	if request.method == 'GET':
+		with DAC.keep_session() as db:
+			display = DBA.get_display_ng(db, ability_id)
+			active_screen = DBA.get_screen_by_id(db, screen_id)
 
-		response = {
-			'display': display,
-			'active_screen': DBA.get_screen_by_id(db, screen_id),
-		}
+			screen_setting_form = forms.ScreenSettingsForm(active_screen.serialize())
 
-		return render(request, 'main/display_ng.html', response)
+			response = {
+				'display': display,
+				'active_screen': active_screen,
+				'screen_setting': screen_setting_form,
+			}
+
+			return render(request, 'main/display_ng.html', response)
+
+	elif request.method == 'POST':
+		with DAC.keep_session() as db:
+			active_screen = DBA.get_screen_by_id(db, screen_id)
+			screen_setting_form = forms.ScreenSettingsForm(request.POST)
+
+			if screen_setting_form.is_valid():
+				active_screen.width = screen_setting_form.cleaned_data.get('width')
+				active_screen.height = screen_setting_form.cleaned_data.get('height')
+				active_screen.x_offset = screen_setting_form.cleaned_data.get('x_offset')
+				active_screen.y_offset = screen_setting_form.cleaned_data.get('y_offset')
+				active_screen.rotation_period = screen_setting_form.cleaned_data.get('rotation_period')
+
+				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': screen_id}))
+			else:
+				#TODO handle invalid form - return same page with response key 'error msg'
+				pass
+
+	else:
+		return HttpResponseNotAllowed("Invalid HTTP request method.")
+
 
 
 def settings(request):

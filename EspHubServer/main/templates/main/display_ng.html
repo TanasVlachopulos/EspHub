@@ -24,37 +24,39 @@
                 </div>
             </div>
 
-            <form>
-                <p class="range-field">
-                    <label for="rotation-period">Rotation period <span id="rotation-period-value">{{ active_screen.rotation_period }}</span>&nbsp;s</label>
-                    <input type="range" id="rotation-period" min="10" max="300" value="{{ active_screen.rotation_period }}"
-                           onchange="$('#rotation-period-value').text($(this).val())">
-                </p>
-                <div class="row">
-                    <div class="input-field col s6 m3 l3">
-                        <input id="input-width" type="number" class="validate">
-                        <label for="input-width">Width</label>
-                    </div>
-                    <div class="input-field col s6 m3 l3">
-                        <input id="input-height" type="number" class="validate">
-                        <label for="input-height">Height</label>
-                    </div>
-                    <div class="input-field col s6 m3 l3">
-                        <input id="input-offset-x" type="number" class="validate">
-                        <label for="input-offset-x">X offset</label>
-                    </div>
-                    <div class="input-field col s6 m3 l3">
-                        <input id="input-offset-y" type="number" class="validate">
-                        <label for="input-offset-y">X offset</label>
-                    </div>
-                </div>
-            </form>
+{#            <form>#}
+{#                <p class="range-field">#}
+{#                    <label for="rotation-period">Rotation period <span id="rotation-period-value">{{ active_screen.rotation_period }}</span>&nbsp;s</label>#}
+{#                    <input type="range" id="rotation-period" min="10" max="300" value="{{ active_screen.rotation_period }}"#}
+{#                           onchange="$('#rotation-period-value').text($(this).val())">#}
+{#                </p>#}
+{#                <div class="row">#}
+{#                    <div class="input-field col s6 m3 l3">#}
+{#                        <input id="input-width" type="number" class="validate">#}
+{#                        <label for="input-width">Width</label>#}
+{#                    </div>#}
+{#                    <div class="input-field col s6 m3 l3">#}
+{#                        <input id="input-height" type="number" class="validate">#}
+{#                        <label for="input-height">Height</label>#}
+{#                    </div>#}
+{#                    <div class="input-field col s6 m3 l3">#}
+{#                        <input id="input-offset-x" type="number" class="validate">#}
+{#                        <label for="input-offset-x">X offset</label>#}
+{#                    </div>#}
+{#                    <div class="input-field col s6 m3 l3">#}
+{#                        <input id="input-offset-y" type="number" class="validate">#}
+{#                        <label for="input-offset-y">X offset</label>#}
+{#                    </div>#}
+{#                </div>#}
+{#            </form>#}
+            {% include 'main/forms/screen_settings_form.html' with form=screen_setting ability_id=display.ability_id %}
+
             <a class="btn waves-effect waves-light orange darken-1"><i class="material-icons right">launch</i> Edit content</a>
             <a id="btn-screen-preview" class="btn waves-effect waves-light blue-grey darken-1"
                onclick="loadScreenPreview('{% url "Apis:get_screenshot" active_screen.id %}')">
                 Preview
             </a>
-            <a class="btn waves-effect waves-light green darken-1 disabled">Save</a>
+            <a class="btn waves-effect waves-light green darken-1 disabled" id="btn-save-screen-settings" onclick="$('#screen-settings-form').submit();">Save</a>
 
 
             <div class="row" >
