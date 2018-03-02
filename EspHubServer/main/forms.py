@@ -6,6 +6,7 @@ conf = Config.get_config()
 input_abilities = conf.get('db', 'input_abilities').split(',')
 output_abilities = conf.get('db', 'output_abilities').split(',')
 
+
 class EditAbilityForm(forms.Form):
 	id = forms.DecimalField(required=False)
 	# name = forms.CharField(max_length=256, disabled=False, required=False)
@@ -26,14 +27,25 @@ class EditDeviceForm(forms.Form):
 	validator_max_len = validators.MaxLengthValidator(64)
 	name = forms.CharField(label='Device name', max_length=64, required=True, validators=[validator_max_len])
 
+
 class BrokerSettingsForm(forms.Form):
 	title = 'Broker settings'
 	ip = forms.CharField(label='Broker address', max_length=128, required=True)
 	port = forms.DecimalField(label='Broker port', required=True, initial=1883)
 	server_name = forms.CharField(label='EspHub server name', required=True, max_length=128)
 
+
 class DiscoverySettingsForm(forms.Form):
 	title = 'Discovery settings'
 	broadcast = forms.GenericIPAddressField(label='Discovery broadcast address', required=True)
 	discovery_port = forms.DecimalField(label='Discovery port', required=True)
 	interval = forms.DecimalField(label='Discovery interval', required=True, initial=5)
+
+
+class ScreenSettingsForm(forms.Form):
+	id = forms.IntegerField(required=False)  # only for internal form purposes, user cant change this
+	rotation_period = forms.IntegerField(widget=forms.NumberInput(attrs={'type': 'range'}), label="Rotation period", required=True, min_value=10, max_value=300)
+	width = forms.IntegerField(label='Width', min_value=1, required=False)
+	height = forms.IntegerField(label='Height', min_value=1, required=False)
+	x_offset = forms.IntegerField(label='X offset', min_value=0, required=False)
+	y_offset = forms.IntegerField(label='Y offset', min_value=0, required=False)

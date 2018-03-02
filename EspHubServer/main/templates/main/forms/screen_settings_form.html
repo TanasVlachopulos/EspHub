@@ -1,0 +1,41 @@
+<form method="post" action="{% url 'main:display_ng' ability_id form.id.value %}" id="screen-settings-form">
+    {% csrf_token %}
+    <p class="range-field">
+        <label for="{{ form.rotation_period.id_for_label }}">
+            {{ form.rotation_period.label }} <span id="{{ form.rotation_period.id_for_label }}-value">{{ active_screen.rotation_period }}</span>&nbsp;s
+        </label>
+        {{ form.rotation_period }}
+        {{ form.id.value }}
+    </p>
+    <div class="row">
+        <div class="input-field col s6 m3 l3">
+            {{ form.width }}
+            <label for="{{ form.width.id_for_label }}">{{ form.width.label }}</label>
+        </div>
+        <div class="input-field col s6 m3 l3">
+            {{ form.height }}
+            <label for="{{ form.height.id_for_label }}">{{ form.height.label }}</label>
+        </div>
+        <div class="input-field col s6 m3 l3">
+            {{ form.x_offset }}
+            <label for="{{ form.x_offset.id_for_label }}">{{ form.x_offset.label }}</label>
+        </div>
+        <div class="input-field col s6 m3 l3">
+            {{ form.y_offset }}
+            <label for="{{ form.y_offset.id_for_label }}">{{ form.y_offset.label }}</label>
+        </div>
+    </div>
+</form>
+
+<script type="text/javascript">
+    {# bind onchange event for rotation period value - set value in label when range changed #}
+    var range_id = "{{ form.rotation_period.id_for_label }}";
+    $('#' + range_id).change(function () {
+        $('#' + range_id + '-value').text($(this).val())
+    });
+
+    $('#screen-settings-form').change(function () {
+        console.log('form modified');
+        $('#btn-save-screen-settings').removeClass('disabled');
+    })
+</script>
