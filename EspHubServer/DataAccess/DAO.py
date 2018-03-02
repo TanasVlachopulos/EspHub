@@ -347,6 +347,14 @@ class Screen(Base):
 	:type rotation_period: int
 	:param params: Additional arguments in JSON format.
 	:type params: json
+	:param width: Width of screenshot.
+	:type width: int
+	:param height: Height of screenshot.
+	:type height: int
+	:param x_offset: Screenshot offset on X axis.
+	:type x_offset: int
+	:param y_offset: Screenshot offset on Y axis.
+	:type y_offset: int
 	:param content_type: Define type of screen content. By default content is HTML/CSS/JS stored in column 'content'.
 	:type content_type: String
 	:param content: Raw content in various format, primary HTML/CSS/JS.
@@ -364,6 +372,10 @@ class Screen(Base):
 	order = Column('order', Integer, default=0)
 	rotation_period = Column('rotationPeriod', Integer, default=0)
 	params = Column('params', CustomJson, nullable=True)
+	width = Column('width', Integer, nullable=True) # width of screenshot
+	height = Column('height', Integer, nullable=True)
+	x_offset = Column('x_offset', Integer, nullable=True)
+	y_offset = Column('y_offset', Integer, nullable=True)
 	content_type = Column('contentType', String(32), default=CONTENT_TYPE_HTML)
 	content = Column('content', BLOB, nullable=True)
 
@@ -372,3 +384,21 @@ class Screen(Base):
 
 	def __repr__(self):
 		return "Screen <{}>".format((self.id, self.name, self.order, self.rotation_period, self.content_type))
+
+	def serialize(self):
+		"""
+		Serialize object into dictionary.
+		:return: Object representation as dictionary.
+		"""
+		object_dic = self.__dict__.copy()
+		object_dic.pop('_sa_instance_state', None)
+		object_dic.pop('display_ng', None)
+		object_dic.pop('content', None)
+		return object_dic
+
+	def to_json(self):
+		"""
+		Serialize object into JSON.
+		:return: String in JSON format.
+		"""
+		return json.dumps(self.serialize())
