@@ -289,9 +289,16 @@ def get_screen_by_id(session, screen_id):
 	"""
 	Obtain screen by id from table Screen belong to table DisplayNg.
 	:param session: Database session.
-	:param device_id: ID of display parent Device.
-	:param display_id: ID of DisplayNg table, parent of requested screen.
 	:param screen_id: ID of requested Screen.
 	:return: DAO Screen object.
 	"""
 	return session.query(Screen).get(screen_id)
+
+def delete_screen_by_id(session, screen_id):
+	"""
+	Delete screen with specific ID.
+	:param session: Session.
+	:param screen_id: ID of screen.
+	:return:
+	"""
+	return session.query(Screen).filter(Screen.id == screen_id).delete()
