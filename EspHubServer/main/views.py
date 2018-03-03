@@ -1,6 +1,6 @@
 import json
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotAllowed, HttpResponseNotFound, Http404
 from django.urls import reverse
 from django.forms import formset_factory
 # from .models import Device
@@ -148,12 +148,10 @@ def display_ng(request, ability_id, screen_id):
 
 				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': screen_id}))
 			else:
-				#TODO handle invalid form - return same page with response key 'error msg'
+				# TODO handle invalid form - return same page with response key 'error msg'
 				pass
-
 	else:
 		return HttpResponseNotAllowed("Invalid HTTP request method.")
-
 
 
 def settings(request):
@@ -215,6 +213,37 @@ def settings(request):
 	else:
 		log.error("Invalid type of HTTP request.")
 		return HttpResponse('error')
+
+
+def screen_edit(request, screen_id):
+	if request.method == 'GET':
+		with DAC.keep_session() as db:
+			screen = DBA.get_screen_by_id(db, screen_id)
+
+			if screen:
+				form = forms.ScreenContentForm({'content': screen.content})
+				response = {
+					'screen': screen,
+					'form': form,
+				}
+				return render(request, 'main/display/screen_edit.html', response)
+			else:
+				raise Http404("Requested screen does not exists.")
+	elif request.method == 'POST':
+		screen_content_form = forms.ScreenContentForm(request.POST)
+
+		if screen_content_form.is_valid():
+			with DAC.keep_session() as db:
+				screen = DBA.get_screen_by_id(db, screen_id)
+				# content have to be encoded to bytes because content column is type of BLOB
+				screen.content = (screen_content_form.cleaned_data.get('content')).encode('utf-8')
+
+				return HttpResponseRedirect(reverse('main:screen_edit', kwargs={'screen_id': screen_id}))
+		else:
+			# TODO handle invalid form
+			pass
+	else:
+		return HttpResponseNotAllowed("Invalid HTTP request method.")
 
 
 """ FORMS """

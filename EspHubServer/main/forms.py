@@ -49,3 +49,6 @@ class ScreenSettingsForm(forms.Form):
 	height = forms.IntegerField(label='Height', min_value=1, required=False)
 	x_offset = forms.IntegerField(label='X offset', min_value=0, required=False)
 	y_offset = forms.IntegerField(label='Y offset', min_value=0, required=False)
+
+class ScreenContentForm(forms.Form):
+	content = forms.CharField(widget=forms.Textarea(), required=False)
