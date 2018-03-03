@@ -136,6 +136,7 @@ def display_ng(request, ability_id, screen_id):
 				'active_screen': active_screen,
 				'screen_setting': screen_setting_form,
 				'screen_action_form': forms.ScreenActionForm(),
+				'add_screen_form': forms.AddScreenForm(),
 			}
 
 			return render(request, 'main/display_ng.html', response)

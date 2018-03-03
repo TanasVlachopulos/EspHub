@@ -5,7 +5,7 @@ from django.forms import formset_factory
 from main import forms
 from Config.Config import Config
 from Tools.Log import Log
-from DataAccess import DAC, DBA
+from DataAccess import DAC, DBA, DAO
 from datetime import datetime, timedelta
 from main import data_parsing
 from DisplayBusiness.WebScreenshot import WebScreenshot
@@ -80,6 +80,7 @@ def get_values(request, device_id, ability):
 	response = data_parsing.get_records_for_charts(device_id, ability, from_date, to_date, summarization=summarize)
 	return HttpResponse(json.dumps(response))
 
+
 def get_screenshot(request, screen_id):
 	"""
 
@@ -113,15 +114,16 @@ def edit_screens(request):
 
 				if action == 'up':
 					pass
-				elif action =='down':
+				elif action == 'down':
 					pass
 				elif action == 'delete':
 					if len(display.screens) <= 1:
+						# handle when only 1 screen left in device - cannot be deleted
 						log.warning('Cannot delete screen. At least one screen must be present.')
 						return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': display.ability_id, 'screen_id': screen.id}))
 
 					log.info("Deleting display '{}' with ID: {}.".format(display.name, display.id))
-					DBA.delete_screen_by_id(db, screen.id) # delete screen
+					DBA.delete_screen_by_id(db, screen.id)  # delete screen
 
 					new_screen_id = [s.id for s in display.screens if s.id != screen.id][0]  # get first existing screen ID
 					return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': display.ability_id, 'screen_id': new_screen_id}))
@@ -132,3 +134,33 @@ def edit_screens(request):
 	else:
 		log.error("GET request is not allowed.")
 		return HttpResponseBadRequest("GET request is not allowed.")
+
+
+def add_screen(request, ability_id):
+	"""
+	POST method.
+	Add new screen with name and description.
+	:param request:
+	:return:
+	"""
+	if request.method == 'POST':
+		log.debug('Adding new screen')
+		add_screen_form = forms.AddScreenForm(request.POST)
+
+		if add_screen_form.is_valid():
+			with DAC.keep_session() as db:
+				display = DBA.get_display_ng(db, ability_id)
+				if not display:
+					log.warning("Ability with ID: {} does not exists.".format(ability_id))
+					return HttpResponseBadRequest("Ability with ID: {} does not exists.".format(ability_id))
+
+				new_screen = DAO.Screen(name=add_screen_form.cleaned_data.get('name'),
+										description=add_screen_form.cleaned_data.get('description'),
+										display_ng=display, )
+
+				redirect_screen_id = [s.id for s in display.screens][0]  # select first screen of device for redirection (new once does not have ID yet)
+				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': redirect_screen_id}))
+		else:
+			log.warning("Invalid value in form.")
+			# TODO better handling
+			return HttpResponseBadRequest("Invalid value in form.")

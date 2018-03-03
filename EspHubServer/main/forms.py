@@ -62,3 +62,10 @@ class ScreenActionForm(forms.Form):
 	"""
 	screen_id = forms.IntegerField(required=True)
 	action = forms.CharField(required=True)
+
+class AddScreenForm(forms.Form):
+	"""
+	Add new screen.
+	"""
+	name = forms.CharField(required=True, max_length=64, label='Name')
+	description = forms.CharField(widget=forms.Textarea(attrs={'class': 'materialize-textarea'}), required=False, max_length=512, label='Description')

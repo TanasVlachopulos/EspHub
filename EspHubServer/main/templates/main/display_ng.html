@@ -88,6 +88,28 @@
 
     </div>
 
+    <div class="fixed-action-btn">
+        <a class="btn-floating btn-large waves-effect waves-light red" onclick="$('#modal-add-screen').modal('open');">
+            <i class="large material-icons">add</i>
+        </a>
+    </div>
+
+    <div id="modal-add-screen" class="modal">
+        <div class="modal-content">
+            <h5>Add screen</h5>
+            <br>
+            <form action="{% url 'Apis:add_screen' display.ability_id %}" method="post" id="add-screen-form">
+                {% csrf_token %}
+                {{ add_screen_form }}
+            </form>
+        </div>
+        <div class="modal-footer">
+            <a class="modal-action modal-close waves-effect waves-red btn-flat ">Cancel</a>
+            <a class="modal-action modal-close waves-effect waves-green btn-flat"
+               onclick="$('#add-screen-form').submit();">Add</a>
+        </div>
+    </div>
+
 
     {% load static %}
     <script type="text/javascript" src="{% static 'main/js/loadScreenPreview.js' %}"></script>
@@ -107,7 +129,7 @@
             input_action.val(action);
 
             if (action === 'delete') {
-                if (!confirm("Do you want do delete screen?")){
+                if (!confirm("Do you want do delete screen?")) {
                     return;
                 }
             }
