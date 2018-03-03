@@ -294,11 +294,22 @@ def get_screen_by_id(session, screen_id):
 	"""
 	return session.query(Screen).get(screen_id)
 
+
 def delete_screen_by_id(session, screen_id):
 	"""
 	Delete screen with specific ID.
-	:param session: Session.
+	:param session: Database session.
 	:param screen_id: ID of screen.
 	:return:
 	"""
 	return session.query(Screen).filter(Screen.id == screen_id).delete()
+
+
+def add_screen(session, screen):
+	"""
+	Add screen to display.
+	:param session: Database session.
+	:param screen: DAO Screen object.
+	:return:
+	"""
+	session.add(screen)
