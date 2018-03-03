@@ -9,7 +9,7 @@
 
     <div class="row">
         {# screen setting #}
-        <div class="col s12 m8 l8">
+        <div class="col s12 m7 l8">
             <div class="row">
                 <div class="col l12">
                     <h5><span class="tooltipped" data-tooltip="{{ active_screen.description }}">{{ active_screen.name | capfirst }}</span></h5>
@@ -19,15 +19,23 @@
 
             {% include 'main/forms/screen_settings_form.html' with form=screen_setting ability_id=display.ability_id %}
 
-            <a class="btn waves-effect waves-light orange darken-1" href="{% url 'main:screen_edit' active_screen.id %}" target="_blank">
-                <i class="material-icons right">launch</i>
-                Edit content
-            </a>
-            <a id="btn-screen-preview" class="btn waves-effect waves-light blue-grey darken-1"
-               onclick="loadScreenPreview('{% url "Apis:get_screenshot" active_screen.id %}')">
-                Preview
-            </a>
-            <a class="btn waves-effect waves-light green darken-1 disabled" id="btn-save-screen-settings" onclick="$('#screen-settings-form').submit();">Save</a>
+            <div class="row">
+                <div class="col s12 m4 l5 wide-btn">
+                    <a class="btn waves-effect waves-light orange darken-1" href="{% url 'main:screen_edit' active_screen.id %}" target="_blank">
+                        <i class="material-icons right">launch</i>
+                        Edit content
+                    </a>
+                </div>
+                <div class="col s12 m4 l3 wide-btn">
+                    <a id="btn-screen-preview" class="btn waves-effect waves-light blue-grey darken-1"
+                       onclick="loadScreenPreview('{% url "Apis:get_screenshot" active_screen.id %}')">
+                        Preview
+                    </a>
+                </div>
+                <div class="col s12 m4 l3 wide-btn">
+                    <a class="btn waves-effect waves-light green darken-1 disabled" id="btn-save-screen-settings" onclick="$('#screen-settings-form').submit();">Save</a>
+                </div>
+            </div>
 
 
             <div class="row">
@@ -56,19 +64,26 @@
         </div>
 
         {# screen selector #}
-        <div class="col s12 m4 l4">
+        <div class="col s12 m5 l4">
             <h5>Screens</h5>
             <div class="collection">
                 {% for screen in display.screens %}
                     <a href="{% url 'main:display_ng' display.ability_id screen.id %}"
                        class="collection-item {% if screen.id == active_screen.id %}active{% endif %}">
                         {{ screen.name | capfirst }}
-                        <span href="#!" class="secondary-content"><i class="material-icons">delete</i></span>
-                        <span href="#!" class="secondary-content"><i class="material-icons">keyboard_arrow_down</i></span>
-                        <span href="#!" class="secondary-content"><i class="material-icons">keyboard_arrow_up</i></span>
+                        <span href="#!" class="secondary-content" onclick="screenAction(event, {{ screen.id }}, 'delete')"><i class="material-icons">delete</i></span>
+                        <span href="#!" class="secondary-content" onclick="screenAction(event, {{ screen.id }}, 'down')"><i class="material-icons">keyboard_arrow_down</i></span>
+                        <span href="#!" class="secondary-content" onclick="screenAction(event, {{ screen.id }}, 'up')"><i class="material-icons">keyboard_arrow_up</i></span>
                     </a>
                 {% endfor %}
             </div>
+        </div>
+
+        <div hidden>
+            <form method="post" id="screen-action-form" action="{% url 'Apis:edit_screens' %}">
+                {% csrf_token %}
+                {{ screen_action_form }}
+            </form>
         </div>
 
     </div>
@@ -84,6 +99,21 @@
             $('.tooltipped').tooltip({delay: 50, position: 'bottom'}); // init tooltips
         });
 
+        function screenAction(event, screenId, action) {
+            event.preventDefault();
+            var input_screen_id = $('#{{ screen_action_form.screen_id.id_for_label }}');
+            var input_action = $('#{{ screen_action_form.action.id_for_label }}');
+            input_screen_id.val(screenId);
+            input_action.val(action);
+
+            if (action === 'delete') {
+                if (!confirm("Do you want do delete screen?")){
+                    return;
+                }
+            }
+
+            $('#screen-action-form').submit();
+        }
     </script>
 
 {% endblock %}

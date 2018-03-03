@@ -51,4 +51,14 @@ class ScreenSettingsForm(forms.Form):
 	y_offset = forms.IntegerField(label='Y offset', min_value=0, required=False)
 
 class ScreenContentForm(forms.Form):
+	"""
+	Change screen content from Edit content page.
+	"""
 	content = forms.CharField(widget=forms.Textarea(), required=False)
+
+class ScreenActionForm(forms.Form):
+	"""
+	Make action on screen like: move up, move down, delete.
+	"""
+	screen_id = forms.IntegerField(required=True)
+	action = forms.CharField(required=True)

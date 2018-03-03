@@ -93,3 +93,42 @@ def get_screenshot(request, screen_id):
 
 	return HttpResponse(screen)
 
+
+def edit_screens(request):
+	"""
+	POST method.
+	Edit screen order or delete screen.
+	:param request: Request.
+	:return:
+	"""
+	log.debug("Screen action request.")
+	if request.method == 'POST':
+		screen_action_form = forms.ScreenActionForm(request.POST)
+
+		if screen_action_form.is_valid():
+			with DAC.keep_session() as db:
+				screen = DBA.get_screen_by_id(db, screen_action_form.cleaned_data.get('screen_id'))
+				display = screen.display_ng
+				action = screen_action_form.cleaned_data.get('action')
+
+				if action == 'up':
+					pass
+				elif action =='down':
+					pass
+				elif action == 'delete':
+					if len(display.screens) <= 1:
+						log.warning('Cannot delete screen. At least one screen must be present.')
+						return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': display.ability_id, 'screen_id': screen.id}))
+
+					log.info("Deleting display '{}' with ID: {}.".format(display.name, display.id))
+					DBA.delete_screen_by_id(db, screen.id) # delete screen
+
+					new_screen_id = [s.id for s in display.screens if s.id != screen.id][0]  # get first existing screen ID
+					return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': display.ability_id, 'screen_id': new_screen_id}))
+
+		else:
+			log.error("Invalid ScreenAction Form.")
+			return HttpResponseBadRequest("Invalid ScreenAction Form.")
+	else:
+		log.error("GET request is not allowed.")
+		return HttpResponseBadRequest("GET request is not allowed.")

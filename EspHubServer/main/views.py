@@ -124,12 +124,18 @@ def display_ng(request, ability_id, screen_id):
 			display = DBA.get_display_ng(db, ability_id)
 			active_screen = DBA.get_screen_by_id(db, screen_id)
 
+			if not display:
+				raise Http404("Ability with ID: {} does not exists.".format(ability_id))
+			if not active_screen:
+				raise Http404("Screen with ID: {} does not exists.".format(screen_id))
+
 			screen_setting_form = forms.ScreenSettingsForm(active_screen.serialize())
 
 			response = {
 				'display': display,
 				'active_screen': active_screen,
 				'screen_setting': screen_setting_form,
+				'screen_action_form': forms.ScreenActionForm(),
 			}
 
 			return render(request, 'main/display_ng.html', response)
