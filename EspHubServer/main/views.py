@@ -130,6 +130,7 @@ def display_ng(request, ability_id, screen_id):
 				raise Http404("Screen with ID: {} does not exists.".format(screen_id))
 
 			screen_setting_form = forms.ScreenSettingsForm(active_screen.serialize())
+			display_setting_form = forms.DisplaySettingsForm(display.serialize())
 
 			response = {
 				'display': display,
@@ -137,6 +138,7 @@ def display_ng(request, ability_id, screen_id):
 				'screen_setting': screen_setting_form,
 				'screen_action_form': forms.ScreenActionForm(),
 				'add_screen_form': forms.AddScreenForm(),
+				'display_setting_form': display_setting_form,
 			}
 
 			return render(request, 'main/display_ng.html', response)

@@ -8,6 +8,30 @@
     <h3>{{ display.name | capfirst }}</h3>
 
     <div class="row">
+        <form id="display-setting-form" method="post" action="{% url 'Apis:edit_display' display.ability_id %}">
+            {% csrf_token %}
+            <div class="input-field col s12 m4 l3" style="padding-bottom: 1em;">
+                <div class="switch">
+                    <label>
+                        Off
+                        {{ display_setting_form.enabled }}
+                        <span class="lever"></span>
+                        On
+                    </label>
+                </div>
+            </div>
+            <div class="input-field col s8 m3 l2">
+                {{ display_setting_form.model }}
+            </div>
+            <div class="input-field col s4 m3 l2">
+                <button class="btn-flat waves-effect waves-green disabled" id="display-setting-form-submit" onclick="$('#display-setting-form').submit();">
+                    <i class="material-icons center">save</i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
         {# screen setting #}
         <div class="col s12 m7 l8">
             <div class="row">
@@ -118,7 +142,13 @@
         $(document).ready(function () {
             Materialize.updateTextFields();
             $('.modal').modal(); // init modal windows
+            $('select').material_select();
             $('.tooltipped').tooltip({delay: 50, position: 'bottom'}); // init tooltips
+        });
+
+        {# Enable save button when form modified. #}
+        $('#display-setting-form').change(function () {
+            $('#display-setting-form-submit').removeClass('disabled');
         });
 
         function screenAction(event, screenId, action) {

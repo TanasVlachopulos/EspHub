@@ -122,7 +122,7 @@ def edit_screens(request):
 					index = display.screens.index(screen)
 					if index != len(display.screens):
 						next_screen = display.screens[index + 1]
-						next_screen.order, screen.order = screen.order, next_screen.order # swap current order with next screen order
+						next_screen.order, screen.order = screen.order, next_screen.order  # swap current order with next screen order
 				elif action == 'delete':
 					if len(display.screens) <= 1:
 						# handle when only 1 screen left in device - cannot be deleted
@@ -147,6 +147,7 @@ def add_screen(request, ability_id):
 	POST method.
 	Add new screen with name and description.
 	:param request:
+	:param ability_id: ID of base ability.
 	:return:
 	"""
 	if request.method == 'POST':
@@ -173,3 +174,27 @@ def add_screen(request, ability_id):
 			log.warning("Invalid value in form.")
 			# TODO better handling
 			return HttpResponseBadRequest("Invalid value in form.")
+
+
+def edit_display(request, ability_id):
+	"""
+	POST method
+	:param request:
+	:param ability_id: ID of base ability.
+	:return:
+	"""
+	if request.method == 'POST':
+		log.debug("Edit display request.")
+		display_setting_form = forms.DisplaySettingsForm(request.POST)
+
+		if display_setting_form.is_valid():
+			with DAC.keep_session() as db:
+				display = DBA.get_display_ng(db, ability_id)
+				if not display or not display.screens:
+					log.warning("Ability with ID: {} does not exists.".format(ability_id))
+					return HttpResponseBadRequest("Ability with ID: {} does not exists.".format(ability_id))
+
+				display.model = display_setting_form.cleaned_data.get('model')
+				# TODO save scheduler enable/disable
+
+				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': display.screens[0].id}))

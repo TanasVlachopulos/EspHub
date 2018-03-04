@@ -1,6 +1,7 @@
 from django import forms
 from django.core import validators
 from Config import Config
+from DataAccess.DAO import DisplayNg
 
 conf = Config.get_config()
 input_abilities = conf.get('db', 'input_abilities').split(',')
@@ -50,11 +51,13 @@ class ScreenSettingsForm(forms.Form):
 	x_offset = forms.IntegerField(label='X offset', min_value=0, required=False)
 	y_offset = forms.IntegerField(label='Y offset', min_value=0, required=False)
 
+
 class ScreenContentForm(forms.Form):
 	"""
 	Change screen content from Edit content page.
 	"""
 	content = forms.CharField(widget=forms.Textarea(), required=False)
+
 
 class ScreenActionForm(forms.Form):
 	"""
@@ -63,9 +66,19 @@ class ScreenActionForm(forms.Form):
 	screen_id = forms.IntegerField(required=True)
 	action = forms.CharField(required=True)
 
+
 class AddScreenForm(forms.Form):
 	"""
 	Add new screen.
 	"""
 	name = forms.CharField(required=True, max_length=64, label='Name')
 	description = forms.CharField(widget=forms.Textarea(attrs={'class': 'materialize-textarea'}), required=False, max_length=512, label='Description')
+
+
+class DisplaySettingsForm(forms.Form):
+	"""
+	Settings for display NG on Display detail page.
+	"""
+	choices = ((c, c) for c in DisplayNg.MODELS)
+	model = forms.ChoiceField(choices=choices, required=True, label="Display model")  # display model
+	enabled = forms.BooleanField(required=False, initial=False, label="Enable display")  # ON/OFF switch
