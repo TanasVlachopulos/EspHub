@@ -308,6 +308,7 @@ class DisplayNg(Base):
 	"""
 	MODEL_SSD1306 = 'SSD1306'
 	MODEL_ILI9341 = 'ILI9341'
+	MODELS = [MODEL_ILI9341, MODEL_SSD1306]
 
 	__tablename__ = 'displayNg'
 
@@ -329,6 +330,16 @@ class DisplayNg(Base):
 	def __repr__(self):
 		return "DisplayNg <{}>".format((self.id, self.name, self.height, self.width, self.model))
 
+	def serialize(self):
+		"""
+		Serialize object into dictionary.
+		:return: Object representation as dictionary.
+		"""
+		object_dic = self.__dict__.copy()
+		object_dic.pop('_sa_instance_state', None)
+		object_dic.pop('screens', None)
+		object_dic.pop('ability', None)
+		return object_dic
 
 class Screen(Base):
 	"""
