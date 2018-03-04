@@ -111,22 +111,28 @@ def edit_screens(request):
 				screen = DBA.get_screen_by_id(db, screen_action_form.cleaned_data.get('screen_id'))
 				display = screen.display_ng
 				action = screen_action_form.cleaned_data.get('action')
+				redirect_to = screen.id
 
 				if action == 'up':
-					pass
+					index = display.screens.index(screen)
+					if index != 0:
+						previous_screen = display.screens[index - 1]
+						previous_screen.order, screen.order = screen.order, previous_screen.order  # swap current order with previous screen
 				elif action == 'down':
-					pass
+					index = display.screens.index(screen)
+					if index != len(display.screens):
+						next_screen = display.screens[index + 1]
+						next_screen.order, screen.order = screen.order, next_screen.order # swap current order with next screen order
 				elif action == 'delete':
 					if len(display.screens) <= 1:
 						# handle when only 1 screen left in device - cannot be deleted
 						log.warning('Cannot delete screen. At least one screen must be present.')
-						return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': display.ability_id, 'screen_id': screen.id}))
+					else:
+						log.info("Deleting display '{}' with ID: {}.".format(display.name, display.id))
+						DBA.delete_screen_by_id(db, screen.id)  # delete screen
+						redirect_to = [s.id for s in display.screens if s.id != screen.id][0]  # get first existing screen ID
 
-					log.info("Deleting display '{}' with ID: {}.".format(display.name, display.id))
-					DBA.delete_screen_by_id(db, screen.id)  # delete screen
-
-					new_screen_id = [s.id for s in display.screens if s.id != screen.id][0]  # get first existing screen ID
-					return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': display.ability_id, 'screen_id': new_screen_id}))
+				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': display.ability_id, 'screen_id': redirect_to}))
 
 		else:
 			log.error("Invalid ScreenAction Form.")
@@ -153,10 +159,13 @@ def add_screen(request, ability_id):
 				if not display:
 					log.warning("Ability with ID: {} does not exists.".format(ability_id))
 					return HttpResponseBadRequest("Ability with ID: {} does not exists.".format(ability_id))
+				max_order = max([s.order for s in display.screens])  # determinate maximum order number in display screens
 
 				new_screen = DAO.Screen(name=add_screen_form.cleaned_data.get('name'),
 										description=add_screen_form.cleaned_data.get('description'),
+										order=max_order + 1,
 										display_ng=display, )
+				DBA.add_screen(db, new_screen)
 
 				redirect_screen_id = [s.id for s in display.screens][0]  # select first screen of device for redirection (new once does not have ID yet)
 				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': redirect_screen_id}))

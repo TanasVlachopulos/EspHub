@@ -324,7 +324,7 @@ class DisplayNg(Base):
 	ability = relationship(Ability, cascade='delete', back_populates='display_ng')
 
 	# forward dependencies
-	screens = relationship('Screen', back_populates='display_ng')
+	screens = relationship('Screen', back_populates='display_ng', order_by='Screen.order')
 
 	def __repr__(self):
 		return "DisplayNg <{}>".format((self.id, self.name, self.height, self.width, self.model))
@@ -363,6 +363,7 @@ class Screen(Base):
 	:type display_ng: DisplayNg
 	"""
 	CONTENT_TYPE_HTML = 'html'
+	DEFAULT_ROTATION_PERIOD = 30  # 30s
 
 	__tablename__ = 'screen'
 
@@ -370,9 +371,9 @@ class Screen(Base):
 	name = Column('name', String(64), nullable=False)
 	description = Column('description', String(512), nullable=True)
 	order = Column('order', Integer, default=0)
-	rotation_period = Column('rotationPeriod', Integer, default=0)
+	rotation_period = Column('rotationPeriod', Integer, default=DEFAULT_ROTATION_PERIOD)
 	params = Column('params', CustomJson, nullable=True)
-	width = Column('width', Integer, nullable=True) # width of screenshot
+	width = Column('width', Integer, nullable=True)  # width of screenshot
 	height = Column('height', Integer, nullable=True)
 	x_offset = Column('x_offset', Integer, nullable=True)
 	y_offset = Column('y_offset', Integer, nullable=True)
