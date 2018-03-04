@@ -122,7 +122,11 @@ def display_ng(request, ability_id, screen_id):
 	if request.method == 'GET':
 		with DAC.keep_session() as db:
 			display = DBA.get_display_ng(db, ability_id)
-			active_screen = DBA.get_screen_by_id(db, screen_id)
+			if screen_id == '0':
+				# if screen ID is 0 select first screen from display
+				active_screen = display.screens[0]
+			else:
+				active_screen = DBA.get_screen_by_id(db, screen_id)
 
 			if not display:
 				raise Http404("Ability with ID: {} does not exists.".format(ability_id))
