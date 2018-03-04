@@ -285,6 +285,13 @@ def verify_device(request, device_id):
 										  io=io_type, )
 				db.add(dao_ability)
 
+				# Create corresponding display and screen record if ability is type of display
+				if dao_ability.category == DAO.Ability.CATEGORY_DISPLAY:
+					display = DAO.DisplayNg(name=dao_ability.name)
+					db.add(display)
+					screen = DAO.Screen(name="Default screen", description='Default empty screen.', display_ng=display)
+					db.add(screen)
+
 			return HttpResponseRedirect(reverse('main:waiting_devices'))
 
 
