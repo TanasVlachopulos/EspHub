@@ -313,3 +313,33 @@ def add_screen(session, screen):
 	:return:
 	"""
 	session.add(screen)
+
+
+def insert_task(session, task):
+	"""
+	Insert scheduled task.
+	:param session: Database session.
+	:param task: DAO Task object.
+	:type task: DAO.Task
+	:return:
+	"""
+	session.add(task)
+
+
+def get_tasks_by_group(session, type, group_id=None):
+	"""
+	Get tasks of specific type and group_id.
+	:param session: Database session.
+	:param type: Task type.
+	:param group_id: Task Group ID.
+	:return: List of DAO Task object.
+	"""
+	return session.query(Task).filter(and_(Task.type == type, Task.group_id == group_id)).all()
+
+def get_active_tasks(session):
+	"""
+	Get all active tasks.
+	:param session: Database session.
+	:return: List of DAO Tasks objects.
+	"""
+	return session.query(Task).filter(Task.active == True).all()

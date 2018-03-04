@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func, Text, BLOB
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func, Text, BLOB, Boolean
 from sqlalchemy.orm import relationship
 from DataAccess.DAC import Base
 from DataAccess.CustomTypes import CustomJson
@@ -414,3 +414,28 @@ class Screen(Base):
 		:return: String in JSON format.
 		"""
 		return json.dumps(self.serialize())
+
+
+class Task(Base):
+	"""
+	Represent generic scheduled task. Record from Task table are used for initialization of TaskScheduler object.
+	:param id: Unique screen ID - automatically generated.
+	:type id: int
+	:param type: Type of scheduled task. Determinate handler function for this task.
+	:type type: String
+	:param group_id: Custom ID for task grouping. Optional.
+	:type group_id: int
+	:param active: Is task active.
+	:type active: bool
+	:param params: Additional arguments for task handler.
+	:type params: json
+	"""
+	TYPE_DISPLAY = 'display'
+
+	__tablename__ = 'task'
+
+	id = Column('id', Integer, primary_key=True)
+	type = Column('type', String(32), nullable=False)
+	group_id = Column('group_id', Integer, nullable=True)
+	active = Column('active', Boolean, nullable=False, default=False)
+	params = Column('params', CustomJson, nullable=True)
