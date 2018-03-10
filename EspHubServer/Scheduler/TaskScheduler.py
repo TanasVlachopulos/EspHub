@@ -39,15 +39,28 @@ class TaskScheduler(object):
 				sch_task.next_run = datetime.now() + timedelta(0, sch_task.interal) + (random.randint(300, 3000) / 1000)
 
 	def _find_next_task(self):
+		"""
+		Find next task tu run.
+		:return:
+		"""
 		self.tasks = sorted(self.tasks, key=lambda task: task.next_run)
 		self._next_task = self.tasks[0] if self.tasks else None
 
 	def _get_time_to_next_task(self):
+		"""
+		Calculate sleep time to nex task.
+		:return:
+		"""
 		sleep_time = self._next_task.next_run - datetime.now()
 		sleep_time_seconds = sleep_time.seconds + (sleep_time.microseconds / 1000000)
 		return sleep_time_seconds if sleep_time_seconds > 0 else 0
 
 	def _get_task(self):
+		"""
+		Obtain next task and reschedule task if this task is repeating.
+		:return: ScheduledTask
+		:rtype: ScheduledTask
+		"""
 		if self._next_task.next_run > datetime.now():
 			log.warning("Task is not ready yet. Internal error.")
 			return None
