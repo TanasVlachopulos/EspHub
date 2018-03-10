@@ -2,6 +2,7 @@ from DataAccess import DAO, DAC, DBA
 from Scheduler import DisplayInitHandler
 from Tools import Log
 from datetime import datetime, timedelta
+from multiprocessing import Event, Process, active_children
 import time
 import random
 
@@ -57,8 +58,8 @@ class TaskScheduler(object):
 
 	def _get_task(self):
 		"""
-		Obtain next task and reschedule task if this task is repeating.
-		:return: ScheduledTask
+		Check if next_task is ready, if yes return it and schedule next repeating.
+		:return: ScheduledTask object.
 		:rtype: ScheduledTask
 		"""
 		if self._next_task.next_run > datetime.now():
@@ -72,14 +73,27 @@ class TaskScheduler(object):
 
 		return self._next_task
 
-
 	def run_forever(self):
-		while True:
+		"""
+		Start task processing.
+		Each task are spawned in separate process.
+		:return: Event object. Processing task run until event is not set.
+		:type:
+		"""
+		event = Event()
+		while not event.is_set():
 			## TODO handle some end event and do this in separate process
 			self._find_next_task()
 			sleep = self._get_time_to_next_task()
 			time.sleep(sleep)
 			task = self._get_task()
 
-			task_event = task.event
-			task_event(**task.kwargs)
+			process = Process(target=task.event, kwargs=task.kwargs,
+							  name="{} (G:{})".format(task.task_type, task.group_id))
+			process.start()
+
+			running_processes = active_children()
+			if len(running_processes) > 3:
+				log.warning(
+					"Too many running task processes: {} (count: {})".format([p.name for p in running_processes],
+																			 len(running_processes)))
