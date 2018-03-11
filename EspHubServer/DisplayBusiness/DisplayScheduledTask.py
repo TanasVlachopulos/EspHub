@@ -46,7 +46,7 @@ def display_scheduled_task(queue, screen_id):
 	xmb_bytes = DisplaySsd1306Ops.convert_bitmap_to_xbm_raw(img_bytes, height=img.height, width=img.width)
 
 	response = {'topic': "esp_hub/device/{}/display".format(device_id),
-				'message': xmb_bytes,
+				'payload': xmb_bytes,
 				'qos': 0}
 	queue.put(response)
 

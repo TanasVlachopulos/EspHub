@@ -3,10 +3,13 @@ from Scheduler import DisplayInitHandler
 from Tools import Log
 from datetime import datetime, timedelta
 from multiprocessing import Event, Process, active_children, Queue
+from DeviceCom.MessageHandler import MessageHandler
+from Config.Config import Config
 import time
 import random
 
 log = Log.Log.get_logger()
+conf = Config.get_config()
 
 # Dictionary of initialization functions - key = task type, value = initialization function
 # Initialization function must accept dictionary of arguments and return list of ScheduledTask objects
@@ -84,17 +87,24 @@ class TaskScheduler(Process):
 		"""
 		Collect messages from mqtt queue and send them as MQTT message
 		Mqtt message object is dictionary in format:
-		{'topic': 'esp_hub/...', 'message': 'message to send', 'qos': 0}
+		{'topic': 'esp_hub/...', 'payload': 'message to send', 'qos': 0}
 		:param queue: Multiprocessing queue.
 		:type queue: Queue
 		:param event: Multiprocessing event which indicate end of processing.
 		:type event: Event
 		:return:
 		"""
+		mqtt = MessageHandler(conf.get('mqtt', 'ip'), conf.getint('mqtt', 'port'))
+
 		while not event.is_set():
 			msg_obj = queue.get()
 			if msg_obj:
-				print(msg_obj)
+				# send message from task worker to MQTT
+				try:
+					log.debug("Sending MQTT ({} bytes) response from scheduled worker.".format(len(msg_obj['payload'])))
+					mqtt.publish(msg_obj['topic'], msg_obj['payload'], int(msg_obj.get('qos', 0)))
+				except KeyError:
+					log.error("Scheduled worker response is in invalid format - missing keys 'topic' or 'payload'.")
 
 	def _get_task(self):
 		"""
@@ -121,7 +131,7 @@ class TaskScheduler(Process):
 		"""
 		# create queue for mqtt messages
 		queue = Queue(maxsize=10)
-		queue_worker = Process(target=self.mqtt_queue, kwargs={'queue': queue, 'event': self.end_event})
+		queue_worker = Process(target=self.mqtt_queue, name='Queue worker', kwargs={'queue': queue, 'event': self.end_event})
 		queue_worker.start()
 
 		while not self.end_event.is_set():
@@ -148,8 +158,8 @@ class TaskScheduler(Process):
 		# wait 5 seconds for children (10 * 0.5), if there is no children break loop
 		for _ in range(10):
 			children = active_children()
-			if len(children) > 0:
-				log.debug("Waiting for active children: {}.".format(children))
+			if len(children) > 1:
+				log.debug("Waiting for active children: {}.".format([p.name for p in children]))
 				time.sleep(0.5)
 			else:
 				log.debug("No active children.")
