@@ -14,7 +14,7 @@ log = Log.get_logger()
 class WebScreenshot(object):
 	DRIVER_CHROME = 'chrome'
 
-	def __init__(self, width, height, screen_driver=DRIVER_CHROME, custom_driver_path=None, port=None, local_address=''):
+	def __init__(self, width=500, height=500, screen_driver=DRIVER_CHROME, custom_driver_path=None, port=None, local_address=''):
 		self.port = port if port else random.randint(9000, 65000)
 		self.local_address = local_address if local_address else 'localhost'
 
@@ -46,12 +46,14 @@ class WebScreenshot(object):
 		log.debug("Taking screenshot of screen '{}' size {}x{} as file '{}'".format(screen_id, self.width, self.height, filename))
 		driver = webdriver.Chrome(chrome_options=self.options)
 		driver.get('http://{}:{}/{}'.format(self.local_address, self.port, screen_id))
-		driver.save_screenshot(os.path.join('Images', filename))
+		# driver.save_screenshot(os.path.join('Images', filename))
+		screenshot = driver.get_screenshot_as_png()
 		time.sleep(1)
 		driver.close()
 		# This session have to be closed here, because connection to one thread server block the server for other operation such as shutdown server.
 		# But closing driver cause exception ConnectionResetError: [WinError 10054], I dont know how to handle this exception a and what cause it.
 		# TODO handle each requests in separete thread
+		return screenshot
 
 	def take_screenshot_base64(self, screen_id):
 		"""

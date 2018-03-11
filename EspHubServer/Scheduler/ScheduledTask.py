@@ -4,8 +4,8 @@ class ScheduledTask(object):
 		Init scheduled task.
 		:param task_type: Type of task.
 		:param interval: Scheduled interval in seconds.
-		:param event: Event which will be fired.
-		:param kwargs: Arguments for event.
+		:param event: Function which will be fired on schedule. Function MUST accept argument queue (mqtt queue) and all kwargs arguments! Example: func(queue, my_kwarg_arg)
+		:param kwargs: Arguments for event which are pass as kwargs (non-positional based on name).
 		:param group_id: Specific group ID.
 		:param repeating: Is repeating enabled.
 		"""
