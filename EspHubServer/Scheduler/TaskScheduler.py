@@ -60,7 +60,7 @@ class TaskScheduler(Process):
 
 		for sch_task in self.tasks:
 			# schedule first run with random jitter (0.3-3 s) which prevent overlapping of task starts
-			sch_task.next_run = datetime.now() + timedelta(0, sch_task.interval) + timedelta(milliseconds=random.randint(300, 3000))
+			sch_task.next_run = datetime.now() + timedelta(0, sch_task.interval) + timedelta(0, sch_task.start_offset) + timedelta(milliseconds=random.randint(300, 3000))
 			log.debug("Task '{} (G:{})' is scheduled on {}.".format(sch_task.task_type, sch_task.group_id, sch_task.next_run))
 
 	def _find_next_task(self):
