@@ -88,7 +88,7 @@ def get_screenshot(request, screen_id):
 	:param screen_id:
 	:return:
 	"""
-	ws = WebScreenshot(500, 500)
+	ws = WebScreenshot()
 	screen = ws.take_screenshot_base64(screen_id)
 	ws.quit()
 

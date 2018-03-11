@@ -2,7 +2,7 @@ from DataAccess import DAO, DAC, DBA
 from Scheduler import DisplayInitHandler
 from Tools import Log
 from datetime import datetime, timedelta
-from multiprocessing import Event, Process, active_children
+from multiprocessing import Event, Process, active_children, Queue
 import time
 import random
 
@@ -38,7 +38,6 @@ class TaskScheduler(Process):
 		Initialize tasks from database using type specific init functions.
 		:return:
 		"""
-		tasks = []
 		with DAC.keep_weak_session() as db:
 			tasks = DBA.get_active_tasks(db)
 
@@ -81,6 +80,22 @@ class TaskScheduler(Process):
 		else:
 			return 10  # if there is no task sleep 10s
 
+	def mqtt_queue(self, queue, event):
+		"""
+		Collect messages from mqtt queue and send them as MQTT message
+		Mqtt message object is dictionary in format:
+		{'topic': 'esp_hub/...', 'message': 'message to send', 'qos': 0}
+		:param queue: Multiprocessing queue.
+		:type queue: Queue
+		:param event: Multiprocessing event which indicate end of processing.
+		:type event: Event
+		:return:
+		"""
+		while not event.is_set():
+			msg_obj = queue.get()
+			if msg_obj:
+				print(msg_obj)
+
 	def _get_task(self):
 		"""
 		Check if next_task is ready, if yes return it and schedule next repeating.
@@ -104,12 +119,18 @@ class TaskScheduler(Process):
 		Start task processing until end_event is set.
 		Each task are spawned in separate process.
 		"""
+		# create queue for mqtt messages
+		queue = Queue(maxsize=10)
+		queue_worker = Process(target=self.mqtt_queue, kwargs={'queue': queue, 'event': self.end_event})
+		queue_worker.start()
+
 		while not self.end_event.is_set():
 			time.sleep(0.05)
 			self._find_next_task()
 			task = self._get_task()
 
 			if task:
+				task.kwargs['queue'] = queue
 				process = Process(target=task.event, kwargs=task.kwargs,
 								  name="{} (G:{})".format(task.task_type, task.group_id))
 				process.start()
@@ -123,5 +144,21 @@ class TaskScheduler(Process):
 
 			sleep = self._get_time_to_next_task()
 			self.end_event.wait(sleep)  # wait until next task or undil end_event is set
+
+		# wait 5 seconds for children (10 * 0.5), if there is no children break loop
+		for _ in range(10):
+			children = active_children()
+			if len(children) > 0:
+				log.debug("Waiting for active children: {}.".format(children))
+				time.sleep(0.5)
+			else:
+				log.debug("No active children.")
+				break
+
+		# close and join queue for mqtt messages
+		queue.put(None)  # put empty message to queue to unlock qet waiting
+		queue.close()
+		queue.join_thread()
+		queue_worker.join()
 
 		log.debug("Scheduled task processing terminated.")
