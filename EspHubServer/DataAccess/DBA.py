@@ -343,3 +343,12 @@ def get_active_tasks(session):
 	:return: List of DAO Tasks objects.
 	"""
 	return session.query(Task).filter(Task.active == True).all()
+
+def delete_task_by_id(session, id):
+	"""
+	Delete task by spefiic ID.
+	:param session:
+	:param id:
+	:return:
+	"""
+	return session.query(Task).filter(Task.id == id).delete()

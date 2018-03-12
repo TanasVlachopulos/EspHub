@@ -301,6 +301,8 @@ class DisplayNg(Base):
 	:type model: String
 	:param params: Additional parameters in JSON.
 	:type params: json
+	:param active: Indicate if display is active or not. Global state for scheduled tasks.
+	:type active: bool
 	:param ability: Output ability corresponding with this display.
 	:type ability: Ability
 	:param screens: List of Screens belonging to this display
@@ -319,6 +321,7 @@ class DisplayNg(Base):
 	height = Column('height', Integer, nullable=False)
 	model = Column('model', String(32), nullable=False)
 	params = Column('params', CustomJson, nullable=True)
+	active = Column('active', Boolean, default=False)
 
 	# downward dependencies
 	ability_id = Column('ability_id', Integer, ForeignKey('ability.id'))
@@ -428,7 +431,7 @@ class Task(Base):
 	:param active: Is task active.
 	:type active: bool
 	:param params: Additional arguments for task handler.
-	:type params: json
+	:type params: dict
 	"""
 	TYPE_DISPLAY = 'display'
 
