@@ -16,8 +16,8 @@ def init(args):
 
 		# calculate rotation time (rotation of all screens for this display)
 		time_sum = 0
-		for screen in display.screens:
-			time_sum += screen.rotation_period
+		for s in display.screens:
+			time_sum += s.rotation_period
 
 		# calculate time offset (sum of time from previous displays)
 		time_offset = 0
@@ -25,10 +25,9 @@ def init(args):
 		for i in range(index):
 			time_offset += display.screens[i].rotation_period
 
-		print('>>>', time_sum, time_offset, index, screen_id)
-
 		task = ScheduledTask(task_type=DAO.Task.TYPE_DISPLAY,
 							 interval=time_sum,
+							 name=screen.name,
 							 start_offset=time_offset,
 							 event=DisplayScheduledTask.display_scheduled_task,
 							 kwargs={'screen_id': screen_id}, )

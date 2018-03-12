@@ -60,8 +60,8 @@ class TaskScheduler(Process):
 
 		for sch_task in self.tasks:
 			# schedule first run with random jitter (0.3-3 s) which prevent overlapping of task starts
-			sch_task.next_run = datetime.now() + timedelta(0, sch_task.interval) + timedelta(0, sch_task.start_offset) + timedelta(milliseconds=random.randint(300, 3000))
-			log.debug("Task '{} (G:{})' is scheduled on {}.".format(sch_task.task_type, sch_task.group_id, sch_task.next_run))
+			sch_task.next_run = datetime.now() + timedelta(0, sch_task.start_offset) + timedelta(milliseconds=random.randint(300, 3000))
+			log.debug("Task '{} ({})' is scheduled on {}.".format(sch_task.name, sch_task.task_type, sch_task.next_run))
 
 	def _find_next_task(self):
 		"""
@@ -116,9 +116,10 @@ class TaskScheduler(Process):
 			log.warning("Task is not ready yet. Internal error.")
 			return None
 
+		# reshedule task
 		if self._next_task.repeating:
 			self._next_task.next_run = datetime.now() + timedelta(0, self._next_task.interval)
-			log.debug("Task '{} (G:{})' is scheduled on {}.".format(self._next_task.task_type, self._next_task.group_id, self._next_task.next_run))
+			log.debug("Task '{} ({})' is scheduled on {}.".format(self._next_task.name, self._next_task.task_type, self._next_task.next_run))
 		else:
 			self.tasks.remove(self._next_task)
 
@@ -142,7 +143,7 @@ class TaskScheduler(Process):
 			if task:
 				task.kwargs['queue'] = queue
 				process = Process(target=task.event, kwargs=task.kwargs,
-								  name="{} (G:{})".format(task.task_type, task.group_id))
+								  name="{} ({})".format(task.name, task.task_type))
 				process.start()
 
 			# check and join running children
