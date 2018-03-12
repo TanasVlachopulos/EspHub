@@ -133,6 +133,7 @@ def edit_screens(request):
 						for task in tasks:
 							if task.params['id'] == screen.id:
 								DBA.delete_task_by_id(db, task.id)
+						DBA.set_state(db, DAO.State.KEY_TASKS_ARE_CHANGED, DAO.State.TRUE)
 
 						log.info("Deleting display '{}' with ID: {}.".format(display.name, display.id))
 						DBA.delete_screen_by_id(db, screen.id)  # delete screen
@@ -176,8 +177,10 @@ def add_screen(request, ability_id):
 				DBA.add_screen(db, new_screen)
 				db.flush()  # flush is necessary for obtaining new device ID - before flushing to database is ID = None
 
+				# update task scheduler
 				task = DAO.Task(type=DAO.Task.TYPE_DISPLAY, group_id=display.id, active=display.active, params={'id': new_screen.id})
 				DBA.insert_task(db, task)
+				DBA.set_state(db, DAO.State.KEY_TASKS_ARE_CHANGED, DAO.State.TRUE)
 
 				# redirect_screen_id = [s.id for s in display.screens][0]  # select first screen of device for redirection (new once does not have ID yet)
 				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': new_screen.id}))
@@ -214,5 +217,6 @@ def edit_display(request, ability_id):
 				tasks = DBA.get_tasks_by_group(db, DAO.Task.TYPE_DISPLAY, group_id=display.id)
 				for task in tasks:
 					task.active = state
+				DBA.set_state(db, DAO.State.KEY_TASKS_ARE_CHANGED, DAO.State.TRUE)
 
 				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': display.screens[0].id}))

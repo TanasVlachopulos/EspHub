@@ -26,6 +26,7 @@ class TaskScheduler(Process):
 		self._next_task = None
 		self.end_event = Event()
 
+		self._check_task_change()  # clear on change flag
 		self.init_scheduled_tasks()
 
 	def stop(self):
@@ -41,8 +42,14 @@ class TaskScheduler(Process):
 		Initialize tasks from database using type specific init functions.
 		:return:
 		"""
+		log.info("Initialize task scheduler.")
+		self.tasks = []
 		with DAC.keep_weak_session() as db:
 			tasks = DBA.get_active_tasks(db)
+
+		if not tasks:
+			log.warning('There is no other task.')
+			return
 
 		for task in tasks:
 			task_init_handler = task_init_handlers.get(task.type)
@@ -76,10 +83,11 @@ class TaskScheduler(Process):
 		Calculate sleep time to nex task.
 		:return:
 		"""
+		now = datetime.now()
 		if self._next_task:
-			sleep_time = self._next_task.next_run - datetime.now()
+			sleep_time = self._next_task.next_run - now
 			sleep_time_seconds = sleep_time.seconds + (sleep_time.microseconds / 1000000)
-			return sleep_time_seconds if sleep_time_seconds > 0 else 0
+			return sleep_time_seconds if self._next_task.next_run > now else 0
 		else:
 			return 10  # if there is no task sleep 10s
 
@@ -112,6 +120,8 @@ class TaskScheduler(Process):
 		:return: ScheduledTask object.
 		:rtype: ScheduledTask
 		"""
+		if not self._next_task:
+			return None
 		if self._next_task.next_run > datetime.now():
 			log.warning("Task is not ready yet. Internal error.")
 			return None
@@ -125,6 +135,17 @@ class TaskScheduler(Process):
 
 		return self._next_task
 
+	def _check_task_change(self):
+		"""
+		Check if other process make changes in scheduler and if yes changes indicator back to FALSE
+		:return: True if there are changes, otherwise False.
+		"""
+		with DAC.keep_session() as db:
+			if DBA.get_state(db, DAO.State.KEY_TASKS_ARE_CHANGED) == DAO.State.TRUE:
+				DBA.set_state(db, DAO.State.KEY_TASKS_ARE_CHANGED, DAO.State.FALSE)
+				return True
+			return False
+
 	def run(self):
 		"""
 		Start task processing until end_event is set.
@@ -135,11 +156,15 @@ class TaskScheduler(Process):
 		queue_worker = Process(target=self.mqtt_queue, name='Queue worker', kwargs={'queue': queue, 'event': self.end_event})
 		queue_worker.start()
 
+		if self._check_task_change():  # check if other process make changes in task table and reinitialize scheduler if yes
+			self.init_scheduled_tasks()
+		self._find_next_task()
+		self.end_event.wait(self._get_time_to_next_task())
+
 		while not self.end_event.is_set():
 			time.sleep(0.05)
-			self._find_next_task()
-			task = self._get_task()
 
+			task = self._get_task()
 			if task:
 				task.kwargs['queue'] = queue
 				process = Process(target=task.event, kwargs=task.kwargs,
@@ -153,6 +178,10 @@ class TaskScheduler(Process):
 					"Too many running task processes: {} (count: {})".format([p.name for p in running_processes],
 																			 len(running_processes)))
 
+			# find next task
+			if self._check_task_change():  # check if other process make changes in task table and reinitialize scheduler if yes
+				self.init_scheduled_tasks()
+			self._find_next_task()
 			sleep = self._get_time_to_next_task()
 			self.end_event.wait(sleep)  # wait until next task or undil end_event is set
 
