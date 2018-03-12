@@ -442,3 +442,21 @@ class Task(Base):
 	group_id = Column('group_id', Integer, nullable=True)
 	active = Column('active', Boolean, nullable=False, default=False)
 	params = Column('params', CustomJson, nullable=True)
+
+
+class State(Base):
+	"""
+	Represent generic key-value counter for storing app variables.
+	:param key: Unique key. Max length 32.
+	:type key: str
+	:param value: Key value. Max length 256.
+	:type value: str
+	"""
+	KEY_TASKS_ARE_CHANGED = 'tasks_changed'
+	TRUE = 'true'
+	FALSE = 'false'
+
+	__tablename__ = 'state'
+
+	key = Column('key', String(32), primary_key=True)
+	value = Column('value', String(256), nullable=True)

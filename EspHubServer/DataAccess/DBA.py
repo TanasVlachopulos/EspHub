@@ -352,3 +352,29 @@ def delete_task_by_id(session, id):
 	:return:
 	"""
 	return session.query(Task).filter(Task.id == id).delete()
+
+def set_state(session, key, value):
+	"""
+	Insert or update state.
+	:param session: Database session.
+	:param key: Unique key.
+	:param value: Value.
+	:return:
+	"""
+	state = session.query(State).get(key)
+	if state:
+		state.value = value
+	else:
+		state = State(key=key, value=value)
+		session.add(state)
+
+def get_state(session, key):
+	"""
+	Get state value.
+	:param session: Database session.
+	:param key: Unique key.
+	:return: Key value.
+	:rtype: str
+	"""
+	state = session.query(State).get(key)
+	return state.value if state else None
