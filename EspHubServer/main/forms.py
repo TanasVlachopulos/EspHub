@@ -81,4 +81,4 @@ class DisplaySettingsForm(forms.Form):
 	"""
 	choices = ((c, c) for c in DisplayNg.MODELS)
 	model = forms.ChoiceField(choices=choices, required=True, label="Display model")  # display model
-	enabled = forms.BooleanField(required=False, initial=False, label="Enable display")  # ON/OFF switch
+	active = forms.BooleanField(required=False, initial=False, label="Enable display")  # ON/OFF switch

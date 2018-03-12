@@ -128,8 +128,15 @@ def edit_screens(request):
 						# handle when only 1 screen left in device - cannot be deleted
 						log.warning('Cannot delete screen. At least one screen must be present.')
 					else:
+						# delete associated screen task
+						tasks = DBA.get_tasks_by_group(db, DAO.Task.TYPE_DISPLAY, display.id)
+						for task in tasks:
+							if task.params['id'] == screen.id:
+								DBA.delete_task_by_id(db, task.id)
+
 						log.info("Deleting display '{}' with ID: {}.".format(display.name, display.id))
 						DBA.delete_screen_by_id(db, screen.id)  # delete screen
+
 						redirect_to = [s.id for s in display.screens if s.id != screen.id][0]  # get first existing screen ID
 
 				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': display.ability_id, 'screen_id': redirect_to}))
@@ -167,9 +174,13 @@ def add_screen(request, ability_id):
 										order=max_order + 1,
 										display_ng=display, )
 				DBA.add_screen(db, new_screen)
+				db.flush()  # flush is necessary for obtaining new device ID - before flushing to database is ID = None
 
-				redirect_screen_id = [s.id for s in display.screens][0]  # select first screen of device for redirection (new once does not have ID yet)
-				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': redirect_screen_id}))
+				task = DAO.Task(type=DAO.Task.TYPE_DISPLAY, group_id=display.id, active=display.active, params={'id': new_screen.id})
+				DBA.insert_task(db, task)
+
+				# redirect_screen_id = [s.id for s in display.screens][0]  # select first screen of device for redirection (new once does not have ID yet)
+				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': new_screen.id}))
 		else:
 			log.warning("Invalid value in form.")
 			# TODO better handling
@@ -179,6 +190,7 @@ def add_screen(request, ability_id):
 def edit_display(request, ability_id):
 	"""
 	POST method
+	Edit display details e.g. off/on, display model
 	:param request:
 	:param ability_id: ID of base ability.
 	:return:
@@ -195,6 +207,12 @@ def edit_display(request, ability_id):
 					return HttpResponseBadRequest("Ability with ID: {} does not exists.".format(ability_id))
 
 				display.model = display_setting_form.cleaned_data.get('model')
-				# TODO save scheduler enable/disable
+				state = display_setting_form.cleaned_data.get('active')
+				display.active = state
+
+				# update scheduled task enable/disable
+				tasks = DBA.get_tasks_by_group(db, DAO.Task.TYPE_DISPLAY, group_id=display.id)
+				for task in tasks:
+					task.active = state
 
 				return HttpResponseRedirect(reverse('main:display_ng', kwargs={'ability_id': ability_id, 'screen_id': display.screens[0].id}))

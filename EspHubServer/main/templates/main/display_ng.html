@@ -7,6 +7,7 @@
 {% block content %}
     <h3>{{ display.name | capfirst }}</h3>
 
+    {# display setting #}
     <div class="row">
         <form id="display-setting-form" method="post" action="{% url 'Apis:edit_display' display.ability_id %}">
             {% csrf_token %}
@@ -14,7 +15,7 @@
                 <div class="switch">
                     <label>
                         Off
-                        {{ display_setting_form.enabled }}
+                        {{ display_setting_form.active }}
                         <span class="lever"></span>
                         On
                     </label>
@@ -22,6 +23,7 @@
             </div>
             <div class="input-field col s8 m3 l2">
                 {{ display_setting_form.model }}
+                <label for="{{ display_setting_form.model.id_for_label }}">{{ display_setting_form.model.label }}</label>
             </div>
             <div class="input-field col s4 m3 l2">
                 <button class="btn-flat waves-effect waves-green disabled" id="display-setting-form-submit" onclick="$('#display-setting-form').submit();">
