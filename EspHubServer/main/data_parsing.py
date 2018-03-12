@@ -111,6 +111,12 @@ def render_plot_64base_preview(device_id, ability):
 
 
 def get_screen_list(device_id, ability_name):
+	"""
+	OBSOLETE
+	:param device_id:
+	:param ability_name:
+	:return:
+	"""
 	with DAC.keep_session() as db:
 		screens = DBA.get_display(db, device_id, ability_name)
 

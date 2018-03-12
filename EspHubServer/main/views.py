@@ -119,6 +119,14 @@ def display(request, ability_name, device_id):
 
 
 def display_ng(request, ability_id, screen_id):
+	"""
+	Render Display NG page and one of their screens (display output ability button in device detail).
+	Handle change of screen detail settings.
+	:param request:
+	:param ability_id: ID of parent ability.
+	:param screen_id: ID of current screen.
+	:return:
+	"""
 	if request.method == 'GET':
 		with DAC.keep_session() as db:
 			display = DBA.get_display_ng(db, ability_id)
@@ -229,6 +237,13 @@ def settings(request):
 
 
 def screen_edit(request, screen_id):
+	"""
+	Handle screen content editor with rich HTML/CSS/JS formating.
+	Save screen content to DB.
+	:param request:
+	:param screen_id: ID of associated screen.
+	:return:
+	"""
 	if request.method == 'GET':
 		with DAC.keep_session() as db:
 			screen = DBA.get_screen_by_id(db, screen_id)
@@ -329,6 +344,7 @@ def output_action(request, device_id, ability):
 
 def save_screen(request, device_id):
 	"""
+	OBSOLETE
 	Receive screen parameters from display setting. Insert or update existing screen from DB. Action for 'add screen' and 'save' btn.
 	:param request:
 	:param device_id: parent device ID
@@ -427,6 +443,7 @@ def records_api(request, device_id, ability):
 
 def display_preview_api(request, device_id, ability):
 	"""
+	OBSOLETE
 	Render Base64 plot preview for display setting page
 	:param request:
 	:param device_id: device ID
