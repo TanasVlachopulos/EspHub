@@ -156,8 +156,6 @@ class TaskScheduler(Process):
 		queue_worker = Process(target=self.mqtt_queue, name='Queue worker', kwargs={'queue': queue, 'event': self.end_event})
 		queue_worker.start()
 
-		if self._check_task_change():  # check if other process make changes in task table and reinitialize scheduler if yes
-			self.init_scheduled_tasks()
 		self._find_next_task()
 		self.end_event.wait(self._get_time_to_next_task())
 
@@ -185,15 +183,16 @@ class TaskScheduler(Process):
 			sleep = self._get_time_to_next_task()
 			self.end_event.wait(sleep)  # wait until next task or undil end_event is set
 
-		# wait 5 seconds for children (10 * 0.5), if there is no children break loop
-		for _ in range(10):
-			children = active_children()
-			if len(children) > 1:
-				log.debug("Waiting for active children: {}.".format([p.name for p in children]))
-				time.sleep(0.5)
-			else:
-				log.debug("No active children.")
-				break
+
+		# join worker threads
+		children = active_children()
+		if len(children) > 1:
+			for child in children:
+				if child != queue_worker:
+					log.debug("Waiting for active children: '{}'.".format(child.name))
+					child.join(10) # wait 10 for joining
+		else:
+			log.debug("No active children.")
 
 		# close and join queue for mqtt messages
 		queue.put(None)  # put empty message to queue to unlock qet waiting

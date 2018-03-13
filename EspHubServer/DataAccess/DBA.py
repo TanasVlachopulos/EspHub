@@ -367,6 +367,7 @@ def set_state(session, key, value):
 	else:
 		state = State(key=key, value=value)
 		session.add(state)
+	session.flush()
 
 def get_state(session, key):
 	"""
