@@ -3,7 +3,7 @@ from django.core.management.commands.runserver import BaseRunserverCommand
 from Config import Config
 from DeviceCom import DataCollector as Collector
 from DeviceCom import EspDiscovery as Discovery
-# from Scheduler import PeriodicDisplayTask
+from Scheduler import TaskScheduler
 # from .. import run_django
 from Tools.Log import Log
 import threading
@@ -32,6 +32,9 @@ def _exit_signal_handler(signal, frame):
 	log.info("Keyboard interrupt!")
 	for task in task_to_stop:
 		task.stop()
+
+	for task in task_to_stop:
+		task.join(10)
 
 	# raise keyboard interrupt again for stopping Django webserver
 	raise KeyboardInterrupt
@@ -89,6 +92,33 @@ def _collect_data(endless=True):
 			exit(0)
 
 
+def _run_task_scheduler(endless=True):
+	"""
+	Start task scheduler which handle record from table Task.
+	:param endless: Run scheduler in endless loop.
+	:return: Task scheduler object if endless is False.
+	"""
+	scheduler = TaskScheduler.TaskScheduler()
+	task_to_stop.append(scheduler)
+	scheduler.start()
+
+	if endless:
+		try:
+			while True:
+				time.sleep(1)
+				if not scheduler.is_alive():
+					log.error("Task scheduler process is dead.")
+		except KeyboardInterrupt:
+			log.debug("Start terminating process.")
+			scheduler.stop()
+			scheduler.join(10)  # depend on join timeout in task scheduler
+			log.info("Process terminated")
+		finally:
+			exit(0)
+	else:
+		return scheduler
+
+
 @click.group()
 def cli():
 	"""EspHub home automation server"""
@@ -119,7 +149,7 @@ def cli():
 @click.option('--web-app-only/--full-app', default=False,
 			  help='Run only web interface without other functions (default disabled)')
 @click.argument('address-port', default='', metavar='[ipaddr:port]')
-def start(discovery, collecting, web_app_only, address_port):
+def start(discovery, collecting, task_scheduler, web_app_only, address_port):
 	"""
 	Start EspHub server with all functions
 
@@ -142,16 +172,16 @@ def start(discovery, collecting, web_app_only, address_port):
 	else:
 		log.info("discovery disabled")
 
+	# start task scheduler
+	if task_scheduler and not web_app_only:
+		_run_task_scheduler(endless=False)
+	else:
+		log.info("Task scheduler disabled.")
+
 	# load default ip and port from config
 	if not address_port:
 		conf = Config.get_config()
 		address_port = str.format('{}:{}', conf.get('main', 'ip'), conf.get('main', 'port'))
-
-	# TODO uncomment this after refactoring display module
-	# # start task scheduler
-	# task = PeriodicDisplayTask.PeriodicDisplayTask()
-	# task.start()
-	# task_to_stop.append(task)
 
 	# run_django.run_django()
 	django.setup()
@@ -160,7 +190,7 @@ def start(discovery, collecting, web_app_only, address_port):
 
 
 @cli.command('device-discovery')
-@click.option('--endless', default=True, type=bool, help="Run in infinite loop (default true)")
+@click.option('--endless', default=True, type=bool, help="Run in infinite loop (default true).")
 def device_discovery(endless):
 	"""Start only device discovery function"""
 	# handle interrupt signal when user press ctrl+c
@@ -171,7 +201,7 @@ def device_discovery(endless):
 
 
 @cli.command('collect-data')
-@click.option('--endless', default=True, type=bool, help="Run in infinite loop (default true)")
+@click.option('--endless', default=True, type=bool, help="Run in infinite loop (default true).")
 def collect_data(endless):
 	"""Start only device data collector"""
 	log.info("start collecting data ...")
@@ -179,6 +209,18 @@ def collect_data(endless):
 	signal.signal(signal.SIGINT, _exit_signal_handler)
 
 	_collect_data(endless)
+
+
+@cli.command('task-scheduler')
+@click.option('--endless', default=True, type=bool, help="Run in infinite loop (default true).")
+def task_scheduler(endless):
+	"""
+	Start only task scheduler.
+	"""
+	log.info("Start task scheduler ...")
+	signal.signal(signal.SIGINT, _exit_signal_handler)
+
+	_run_task_scheduler(endless)
 
 
 @cli.command('config')

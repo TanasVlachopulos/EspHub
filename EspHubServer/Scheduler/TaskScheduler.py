@@ -190,7 +190,7 @@ class TaskScheduler(Process):
 			for child in children:
 				if child != queue_worker:
 					log.debug("Waiting for active children: '{}'.".format(child.name))
-					child.join(10) # wait 10 for joining
+					child.join(8) # wait 8s for joining
 		else:
 			log.debug("No active children.")
 
