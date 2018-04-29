@@ -175,7 +175,7 @@ class Record(Base):
 	id = Column('id', Integer, primary_key=True)
 	time = Column('time', DateTime, default=datetime.now())
 	name = Column('type', String(64))
-	value = Column('value', String(256))
+	value = Column('value', String(1024))
 	summarized = Column('summarized', String(16), default=SUM_NONE)
 
 	device_id = Column('device_id', String(64), ForeignKey('device.id'))
