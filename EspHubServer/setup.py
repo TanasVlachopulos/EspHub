@@ -17,6 +17,7 @@ setup(
 		'configparser',
 		'sqlalchemy',
 		'selenium',
+		'pandas',
 		# 'cairosvg',
 	],
 	entry_points='''
