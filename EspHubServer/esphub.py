@@ -146,6 +146,7 @@ def cli():
 @cli.command()
 @click.option('--discovery/--no-discovery', default=True, help='Device discovery function (default enable)')
 @click.option('--collecting/--no-collecting', default=True, help='Collecting data from devices (default enable)')
+@click.option('--task-scheduler/--no-task-scheduler', default=True, help='Run task scheduler for task processing (default enable)')
 @click.option('--web-app-only/--full-app', default=False,
 			  help='Run only web interface without other functions (default disabled)')
 @click.argument('address-port', default='', metavar='[ipaddr:port]')
