@@ -15,7 +15,8 @@ setup(
 		'pygal',
 		'schedule',
 		'configparser',
-		'sqlalchemy'
+		'sqlalchemy',
+		'selenium',
 		# 'cairosvg',
 	],
 	entry_points='''
