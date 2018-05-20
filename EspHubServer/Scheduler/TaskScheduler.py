@@ -37,6 +37,25 @@ class TaskScheduler(Process):
 		log.info("Terminating scheduled task processing.")
 		self.end_event.set()
 
+		# join worker threads
+		log.debug("Scheduler main loop terminated.")
+		children = active_children()
+		if len(children) > 1:
+			for child in children:
+				if child != self.queue_worker:
+					log.debug("Waiting for active children: '{}'.".format(child.name))
+					child.join(8) # wait 8s for joining
+		else:
+			log.debug("No active children.")
+
+		# close and join queue for mqtt messages
+		self.queue.put(None)  # put empty message to queue to unlock qet waiting
+		self.queue.close()
+		self.queue.join_thread()
+		self.queue_worker.join(5)
+
+		log.debug("Scheduled task processing terminated.")
+
 	def init_scheduled_tasks(self):
 		"""
 		Initialize tasks from database using type specific init functions.
@@ -152,9 +171,9 @@ class TaskScheduler(Process):
 		Each task are spawned in separate process.
 		"""
 		# create queue for mqtt messages
-		queue = Queue(maxsize=10)
-		queue_worker = Process(target=self.mqtt_queue, name='Queue worker', kwargs={'queue': queue, 'event': self.end_event})
-		queue_worker.start()
+		self.queue = Queue(maxsize=10)
+		self.queue_worker = Process(target=self.mqtt_queue, name='Queue worker', kwargs={'queue': queue, 'event': self.end_event})
+		self.queue_worker.start()
 
 		self._find_next_task()
 		self.end_event.wait(self._get_time_to_next_task())
@@ -164,7 +183,7 @@ class TaskScheduler(Process):
 
 			task = self._get_task()
 			if task:
-				task.kwargs['queue'] = queue
+				task.kwargs['queue'] = self.queue
 				process = Process(target=task.event, kwargs=task.kwargs,
 								  name="{} ({})".format(task.name, task.task_type))
 				process.start()
@@ -184,21 +203,21 @@ class TaskScheduler(Process):
 			self.end_event.wait(sleep)  # wait until next task or until end_event is set
 
 
-		# join worker threads
-		log.debug("Scheduler main loop terminated.")
-		children = active_children()
-		if len(children) > 1:
-			for child in children:
-				if child != queue_worker:
-					log.debug("Waiting for active children: '{}'.".format(child.name))
-					child.join(8) # wait 8s for joining
-		else:
-			log.debug("No active children.")
-
-		# close and join queue for mqtt messages
-		queue.put(None)  # put empty message to queue to unlock qet waiting
-		queue.close()
-		queue.join_thread()
-		queue_worker.join(5)
-
-		log.debug("Scheduled task processing terminated.")
+		# # join worker threads
+		# log.debug("Scheduler main loop terminated.")
+		# children = active_children()
+		# if len(children) > 1:
+		# 	for child in children:
+		# 		if child != self.queue_worker:
+		# 			log.debug("Waiting for active children: '{}'.".format(child.name))
+		# 			child.join(8) # wait 8s for joining
+		# else:
+		# 	log.debug("No active children.")
+		#
+		# # close and join queue for mqtt messages
+		# self.queue.put(None)  # put empty message to queue to unlock qet waiting
+		# self.queue.close()
+		# self.queue.join_thread()
+		# self.queue_worker.join(5)
+		#
+		# log.debug("Scheduled task processing terminated.")
