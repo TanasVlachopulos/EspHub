@@ -35,6 +35,7 @@ class TaskScheduler(Process):
 		:return:
 		"""
 		log.info("Terminating scheduled task processing.")
+		self.queue.put('quit')
 		self.end_event.set()
 
 		# join worker threads
@@ -125,7 +126,9 @@ class TaskScheduler(Process):
 
 		while not event.is_set():
 			msg_obj = queue.get()
-			if msg_obj:
+			if msg_obj == 'quit':
+				break
+			elif msg_obj:
 				# send message from task worker to MQTT
 				try:
 					log.debug("Sending MQTT ({} bytes) response from scheduled worker.".format(len(msg_obj['payload'])))
@@ -172,7 +175,7 @@ class TaskScheduler(Process):
 		"""
 		# create queue for mqtt messages
 		self.queue = Queue(maxsize=10)
-		self.queue_worker = Process(target=self.mqtt_queue, name='Queue worker', kwargs={'queue': queue, 'event': self.end_event})
+		self.queue_worker = Process(target=self.mqtt_queue, name='Queue worker', kwargs={'queue': self.queue, 'event': self.end_event})
 		self.queue_worker.start()
 
 		self._find_next_task()
