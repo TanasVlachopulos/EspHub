@@ -181,10 +181,11 @@ class TaskScheduler(Process):
 				self.init_scheduled_tasks()
 			self._find_next_task()
 			sleep = self._get_time_to_next_task()
-			self.end_event.wait(sleep)  # wait until next task or undil end_event is set
+			self.end_event.wait(sleep)  # wait until next task or until end_event is set
 
 
 		# join worker threads
+		log.debug("Scheduler main loop terminated.")
 		children = active_children()
 		if len(children) > 1:
 			for child in children:
@@ -198,6 +199,6 @@ class TaskScheduler(Process):
 		queue.put(None)  # put empty message to queue to unlock qet waiting
 		queue.close()
 		queue.join_thread()
-		queue_worker.join()
+		queue_worker.join(5)
 
 		log.debug("Scheduled task processing terminated.")
