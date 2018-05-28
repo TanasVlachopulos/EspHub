@@ -112,7 +112,7 @@ class DataCollector(object):
 				log.info("Device {} is not in database. Creating new device notification for user. Adding device into waiting devices.".format(data.get('id')))
 
 				# check if information about abilities are in JSON serializable format
-				abilities = None
+				abilities = []
 				ability_raw_data = data.get('ability')
 				if isinstance(ability_raw_data, list):
 					abilities = ability_raw_data
@@ -127,9 +127,8 @@ class DataCollector(object):
 						log.error("Cannot parse abilities provided by device '{}'.".format(data.get('name')))
 
 				# add device to waiting list
-				if abilities:
-					new_device = DAO.Device(id=data.get('id'), name=data.get('name'), provided_func=abilities)
-					DBA.add_waiting_device(db, new_device)
+				new_device = DAO.Device(id=data.get('id'), name=data.get('name'), provided_func=abilities)
+				DBA.add_waiting_device(db, new_device)
 
 	def telemetry_callback(self, client, userdata, msg):
 		"""
