@@ -16,7 +16,7 @@
 
 #define EEPROM_SIZE 35			 // size of aloceted EEPROM memory
 #define EEPROM_VARIABLES 2		 // count of JSON variables stored to EEPROM
-#define JSON_SIZE 400			 // standard size of JSON buffer
+#define JSON_SIZE 500			 // standard size of JSON buffer
 #define UDP_MSG_SIZE 100		 // size of input UDP discovery broadcast
 #define UDP_LOCAL_PORT 11114	 // UDP discovery port
 #define DISCOVERY_INTERVAL 15000 // server discovery timeout
@@ -49,8 +49,8 @@ class EspHubDiscovery
 	bool checkServer(const char *ip, int port);
 	void static checkServerCallback(char *topic, byte *payload, unsigned int length);
 	void generateHelloMsg(char *buff, int buff_size);
-	bool static readServerFromEeprom(char *ip, int &port);
-	void static writeServerToEeprom(const char *ip, int port);
+	bool static readServerFromEeprom(char *ip, int &port, char *server_key);
+	void static writeServerToEeprom(const char *ip, int port, const char *server_key);
 	void static internalCallback(char *topic, uint8_t *payload, unsigned int length);
 	void sendTelemetryData();
 	const char *abilities;

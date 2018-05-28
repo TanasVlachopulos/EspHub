@@ -4,7 +4,9 @@ Preferences preferences;
 
 char server_ip[16] = {0};
 int server_port = 1883; // server port - default 1883
+char server_key[128] = {0};
 long last_time = 0;		// time measurement variable
+bool server_validation = true;
 
 // Custom user defined callback function
 std::function<void(char *, uint8_t *, unsigned int)> custom_callback;
@@ -24,7 +26,7 @@ EspHubDiscovery::EspHubDiscovery(const char *deviceName)
 /// check server from EEPROM and try connect in case of failure start discovery new server
 void EspHubDiscovery::begin()
 {
-	if (readServerFromEeprom(server_ip, server_port) && this->checkServer(server_ip, server_port)) // check server stored in EEPROM
+	if (readServerFromEeprom(server_ip, server_port, server_key) && this->checkServer(server_ip, server_port)) // check server stored in EEPROM
 	{
 		Serial.println("ESP_HUB: Connect to server with saved values");
 		while (!verified_to_server) // wait DISCOVERY_INTERVAL seconds to server validation message
@@ -89,7 +91,8 @@ void EspHubDiscovery::setAbilities(const char *abilities)
 /// @param port port number 
 void EspHubDiscovery::setServer(const char *ip, int port)
 {
-	writeServerToEeprom(ip, port);
+	writeServerToEeprom(ip, port, "");
+	server_validation = false;
 }
 
 /// Send one value from sensor to server
@@ -328,13 +331,13 @@ void EspHubDiscovery::checkServerCallback(char *topic, byte *payload, unsigned i
 			Serial.println("ESP_HUB: JSON parse error");
 		}
 
-		// check server IP and port with data from UDP broadcast or data from EEPROM
-		if (strcmp(json["ip"].as<char*>(), server_ip) == 0 && json["port"].as<int>() == server_port)
+		// check server key with data from UDP broadcast or data from EEPROM
+		if (strcmp(json["server_key"].as<char*>(), server_key) == 0 || !server_validation)
 		{
 			Serial.println("ESP_HUB: Server validated");
 
 			// write to EEPROM
-			writeServerToEeprom(json["ip"].as<char*>(), json["port"].as<int>());
+			writeServerToEeprom(json["ip"].as<char*>(), json["port"].as<int>(), json["server_key"].as<char*>());
 
 			verified_to_server = true; // set global property verified_to_server
 		}
@@ -364,7 +367,7 @@ void EspHubDiscovery::generateHelloMsg(char *buff, int buff_size)
 /// @param ip reference to server ip
 /// @param port reference to server port
 /// @return return false if no stored data
-bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
+bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port, char *server_key)
 {
 	Serial.println("ESP_HUB: Read from EEPROM");
 
@@ -373,6 +376,8 @@ bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
 	String stored_ip = preferences.getString("ip");
 	strcpy(ip, stored_ip.c_str());
 	port = preferences.getInt("port");
+	String stored_key = preferences.getString("key");
+	strcpy(server_key, stored_key.c_str());
 
 	preferences.end();
 
@@ -382,13 +387,14 @@ bool EspHubDiscovery::readServerFromEeprom(char *ip, int &port)
 /// Write server credentials to EEPROM
 /// @param ip server ip
 /// @param port server port
-void EspHubDiscovery::writeServerToEeprom(const char *ip, int port)
+void EspHubDiscovery::writeServerToEeprom(const char *ip, int port, const char *server_key)
 {
 	Serial.println("ESP_HUB: Write to EEPROM");
 	preferences.begin("EspHub");
 
 	preferences.putString("ip", ip);
 	preferences.putInt("port", port);
+	preferences.putString("key", server_key);
 
 	preferences.end();
 }
