@@ -88,6 +88,9 @@ class EspHubUnilib(object):
 				# load external python module
 				try:
 					script_path = self.config.get(section, 'script_path')
+					if not os.path.exists(script_path):
+						self.log.error("Module '{}' cannot be found".format(script_path))
+						exit(1)
 
 					# remove .py appendix if is in a name
 					name_parts = script_path.split('.')
@@ -96,8 +99,9 @@ class EspHubUnilib(object):
 						script_path = '.'.join(name_parts[:-1])
 
 					external_module = __import__(script_path)
-				except ImportError:
+				except ImportError  as e:
 					self.log.error("Module '{}' cannot be found or it is invalid module.".format(script_path))
+					self.log.error(e)
 					exit(1)
 
 				# load function from this module
