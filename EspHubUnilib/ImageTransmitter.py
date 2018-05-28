@@ -310,7 +310,8 @@ def send_images(it, device, frame_rate, normalize, x, y, udp_port, bitmaps_folde
 
 	converted_images = []
 
-	for file in [os.path.join(bitmaps_folder, f) for f in os.listdir(bitmaps_folder) if os.path.isfile(os.path.join(bitmaps_folder, f))]:
+	files = [os.path.join(bitmaps_folder, f) for f in os.listdir(bitmaps_folder) if os.path.isfile(os.path.join(bitmaps_folder, f))]
+	for file in sorted(files):
 		img_bytes = it.convert_image_to_bytes(file, normalize)
 		h, w = it.get_image_dimension(file)
 		if img_bytes:
