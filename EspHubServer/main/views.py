@@ -302,7 +302,11 @@ def verify_device(request, device_id):
 
 				# Create corresponding display and screen record if ability is type of display
 				if dao_ability.category == DAO.Ability.CATEGORY_DISPLAY:
-					display = DAO.DisplayNg(name=dao_ability.name)
+					display = DAO.DisplayNg(name=dao_ability.name,
+											width=128,
+											height=64,
+											model=DAO.DisplayNg.MODEL_SSD1306,
+											ability=dao_ability)
 					db.add(display)
 					screen = DAO.Screen(name="Default screen", description='Default empty screen.', display_ng=display)
 					db.add(screen)
