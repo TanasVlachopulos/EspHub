@@ -92,13 +92,16 @@ def remove_device(session, device_id, cascade=False):
 	:return Count of deleted devices.
 	"""
 	if cascade:
-		deleted_abilities = session.query(Ability).filter(Ability.device_id == device_id).delete()
+		# deleted_abilities = session.query(Ability).filter(Ability.device_id == device_id).delete()
+		device = session.query(Device).filter(Device.id == device_id).first()
+		# for ability in device.abilities:
+		# 	delete_ability_by_id(session, ability.id)
 		deleted_displays = session.query(Display).filter(Display.device_id == device_id).delete()
 		deleted_records = session.query(Record).filter(Record.device_id == device_id).delete()
 		deleted_telemetry = session.query(Telemetry).filter(Telemetry.device_id == device_id).delete()
 		deleted_devices = session.query(Device).filter(Device.id == device_id).delete()
-		log.debug("{} devices, {} abilities, {} displays, {} records and {} telemetry was deleted.".format(deleted_devices, deleted_abilities, deleted_displays, deleted_records,
-																										   deleted_telemetry))
+		# log.debug("{} devices, {} abilities, {} displays, {} records and {} telemetry was deleted.".format(deleted_devices, deleted_displays, deleted_records,
+		# 																								   deleted_telemetry))
 		return deleted_devices
 	else:
 		deleted_devices = session.query(Device).filter(Device.id == device_id).delete()
@@ -130,6 +133,18 @@ def get_ability_by_id(session, ability_id):
 	:return: Single DAO Ability object.
 	"""
 	return session.query(Ability).get(ability_id)
+
+def delete_ability_by_id(session, ability_id):
+	"""
+
+	:param session:
+	:param ability_id:
+	:return:
+	"""
+	ability = session.query(Ability).filter(Ability.id == ability_id).first()
+	delete_display_ng_by_id(session, ability.display_ng.id)
+	session.delete(ability)
+
 
 
 def get_record_from_device(session, device_id, value_type=None, order='desc', limit=600):
@@ -284,6 +299,19 @@ def get_display_ng(session, ability_id):
 	ability = session.query(Ability).join(Ability.display_ng).filter(Ability.id == ability_id).first()
 	return ability.display_ng
 
+def delete_display_ng_by_id(session, display_ng_id):
+	"""
+
+	:param session:
+	:param display_ng_id:
+	:return:
+	"""
+	display_ng = session.query(DisplayNg).filter(DisplayNg.id == display_ng_id).first()
+	for screen in display_ng.screens:
+		delete_task_by_id(session, screen.id)
+	# return session.query(DisplayNg).filter(DisplayNg.id == display_ng_id).delete()
+	session.delete(display_ng)
+
 
 def get_screen_by_id(session, screen_id):
 	"""
@@ -336,6 +364,7 @@ def get_tasks_by_group(session, type, group_id=None):
 	"""
 	return session.query(Task).filter(and_(Task.type == type, Task.group_id == group_id)).all()
 
+
 def get_active_tasks(session):
 	"""
 	Get all active tasks.
@@ -343,6 +372,7 @@ def get_active_tasks(session):
 	:return: List of DAO Tasks objects.
 	"""
 	return session.query(Task).filter(Task.active == True).all()
+
 
 def delete_task_by_id(session, id):
 	"""
@@ -352,6 +382,7 @@ def delete_task_by_id(session, id):
 	:return:
 	"""
 	return session.query(Task).filter(Task.id == id).delete()
+
 
 def set_state(session, key, value):
 	"""
@@ -368,6 +399,7 @@ def set_state(session, key, value):
 		state = State(key=key, value=value)
 		session.add(state)
 	session.flush()
+
 
 def get_state(session, key):
 	"""
